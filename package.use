@@ -1,0 +1,8 @@
+# https://www.gentoo.org/support/use-flags/
+
+*/* -debug pam -savedconfig -selinux static static-libs symlink -syslog -systemd -udev
+sys-apps/busybox make-symlinks -math mdev -pam -sep-usr
+sys-apps/kexec-tools -booke lzma -xen
+sys-fs/lvm2 lvm -sanlock thin
+sys-libs/zlib -minizip
+sys-fs/cryptsetup argon2 -fips -gcrypt kernel -nettle -openssl pwquality reencrypt -ssh -urandom
