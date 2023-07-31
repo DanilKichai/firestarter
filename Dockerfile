@@ -16,17 +16,26 @@ RUN \
   emerge-webrsync
 ADD package.use /etc/portage/package.use
 
-# emerge packages
+# build packages
 RUN --security=insecure \
   emerge --update --buildpkg --newuse --with-bdeps=y \
     sys-apps/busybox \
-    sys-apps/kexec-tools \
     sys-fs/lvm2 \
     sys-libs/zlib \
-    sys-fs/cryptsetup \
+    sys-fs/cryptsetup
+
+# custom build kexec-tools
+RUN --security=insecure \
+  LDFLAGS="-static" \
+    emerge --update --buildpkg --newuse --with-bdeps=y \
+      sys-apps/kexec-tools
+
+# install gentoo-source
+RUN --security=insecure \
+  emerge --update --newuse --with-bdeps=y \
     sys-kernel/gentoo-sources
 
-# build initramfs target
+# prepare initramfs target
 WORKDIR "${WORKSPACE}/initramfs"
 RUN mkdir \
   dev \
@@ -61,9 +70,9 @@ RUN qtbz2 --tarbz2 --stdout \
 RUN cp /etc/group \
   /etc/passwd \
   etc/
-ADD init           .
+ADD init .
 
-# build linux kernel
+# build kernel
 WORKDIR /usr/src/linux
 ADD linux.conf .config
 RUN \
