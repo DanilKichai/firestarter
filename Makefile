@@ -1,4 +1,6 @@
-GENTOO_BASE_IMAGE = "gentoo/stage3:musl-hardened"
+GENTOO_PORTAGE_SNAPSHOT = 20230802
+GENTOO_STAGE3_IMAGE = "gentoo/stage3:musl-hardened-20230731"
+
 BUILDKIT_STEP_LOG_MAX_SIZE = 104857600
 
 all: create_builder build_bbloader
@@ -8,14 +10,15 @@ create_builder:
 		--name bbloader-builder \
 		--node bbloader-builder \
 		--buildkitd-flags "--allow-insecure-entitlement security.insecure" \
-		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=${BUILDKIT_STEP_LOG_MAX_SIZE}"
+		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=$(BUILDKIT_STEP_LOG_MAX_SIZE)"
 
 build_bbloader:
 	docker buildx build \
 		--builder bbloader-builder \
 		--allow security.insecure \
 		--progress plain \
-		--build-arg "GENTOO_BASE_IMAGE=$(GENTOO_BASE_IMAGE)" \
+		--build-arg "GENTOO_STAGE3_IMAGE=$(GENTOO_STAGE3_IMAGE)" \
+		--build-arg "GENTOO_PORTAGE_SNAPSHOT=$(GENTOO_PORTAGE_SNAPSHOT)" \
 		--output "type=local,dest=." \
 		.
 

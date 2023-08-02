@@ -1,19 +1,24 @@
 # syntax=docker/dockerfile:experimental
 
-# define gentoo base image
-ARG GENTOO_BASE_IMAGE
-
-# define gentoo base image
-FROM "${GENTOO_BASE_IMAGE}" as builder
-
-# define workspace path
+# set defaults
+ARG GENTOO_STAGE3_IMAGE="gentoo/stage3:musl-hardened"
+ARG GENTOO_PORTAGE_SNAPSHOT=""
 ARG WORKSPACE=/build
+
+# build target
+FROM "${GENTOO_STAGE3_IMAGE}" as builder
+
+# export arguments to stage environment
+ENV GENTOO_PORTAGE_SNAPSHOT="${GENTOO_PORTAGE_SNAPSHOT}"
 ENV WORKSPACE="${WORKSPACE}"
 
 # prepare gentoo emerge
 RUN \
   mkdir -p /var/db/repos/gentoo && \
-  emerge-webrsync
+    emerge-webrsync $( \
+      [ -n "${GENTOO_PORTAGE_SNAPSHOT}" ] && \
+        echo -n "--revert=${GENTOO_PORTAGE_SNAPSHOT}" \
+    )
 ADD package.use /etc/portage/package.use
 
 # build packages
@@ -45,15 +50,14 @@ RUN mkdir \
   root
 RUN \
   mknod -m 622 dev/console c 5 1 && \
-  mknod -m 666 dev/null c 1 3 && \
-  mknod -m 666 dev/zero c 1 5 && \
-  mknod -m 444 dev/random c 1 8 && \
+  mknod -m 666 dev/null    c 1 3 && \
+  mknod -m 666 dev/zero    c 1 5 && \
+  mknod -m 444 dev/random  c 1 8 && \
   mknod -m 444 dev/urandom c 1 9
 RUN qtbz2 --tarbz2 --stdout \
   /var/cache/binpkgs/sys-apps/busybox/busybox-*.xpak | \
     tar --extract --zstd
-RUN tar --extract \
-    --file=usr/share/busybox/busybox-links.tar
+RUN tar --extract --file=usr/share/busybox/busybox-links.tar
 RUN qtbz2 --tarbz2 --stdout \
   /var/cache/binpkgs/sys-apps/kexec-tools/kexec-tools-*.xpak | \
     tar --extract --zstd
@@ -79,8 +83,7 @@ RUN \
   echo "CONFIG_BLK_DEV_INITRD=y" >>.config && \
   echo "CONFIG_INITRAMFS_SOURCE=\"${WORKSPACE}/initramfs\"" >>.config && \
   make olddefconfig
-RUN \
-  make -j "$(cat /proc/cpuinfo | grep processor | wc -l)"
+RUN make -j "$(cat /proc/cpuinfo | grep processor | wc -l)"
 
 # copy target
 FROM scratch
