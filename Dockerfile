@@ -29,11 +29,12 @@ RUN --security=insecure \
     sys-libs/zlib \
     sys-fs/cryptsetup
 
-# custom build kexec-tools
+# custom build packages
 RUN --security=insecure \
   LDFLAGS="-static" \
     emerge --update --buildpkg --newuse --with-bdeps=y \
-      sys-apps/kexec-tools
+      sys-apps/kexec-tools \
+      sys-block/sedutil
 
 # install gentoo-source
 RUN --security=insecure \
@@ -70,6 +71,9 @@ RUN \
   done
 RUN qtbz2 --tarbz2 --stdout \
   /var/cache/binpkgs/sys-fs/cryptsetup/cryptsetup-*.xpak | \
+    tar --extract --zstd
+RUN qtbz2 --tarbz2 --stdout \
+  /var/cache/binpkgs/sys-block/sedutil/sedutil-*.xpak | \
     tar --extract --zstd
 RUN cp /etc/group \
   /etc/passwd \
