@@ -3,54 +3,67 @@
 # set defaults
 ARG GENTOO_STAGE3_IMAGE="gentoo/stage3:musl"
 ARG GENTOO_PORTAGE_SNAPSHOT=""
-ARG PORTAGE_UNWANTED_PACKAGES=" \
-  virtual/udev \
+ARG EMERGE_DEFAULT_OPTS=" \
+  --accept-properties=-interactive \
+  --jobs \
+  --newuse \
+  --deep \
+  --update \
+  --oneshot \
+"
+ARG TARGET_CORE_PACKAGES=" \
+  sys-apps/busybox \
+  sys-apps/kexec-tools \
+  sys-fs/eudev \
 "
 ARG TARGET_ADDITION_PACKAGES=" \
   app-crypt/sbsigntools \
   app-crypt/tpm2-tools \
-  sys-apps/kexec-tools \
   sys-block/sedutil \
   sys-boot/efibootmgr \
+  sys-fs/btrfs-progs \
   sys-fs/cryptsetup \
-  sys-fs/eudev \
+  sys-fs/dosfstools \
+  sys-fs/e2fsprogs \
   sys-fs/lvm2 \
 "
 
 # build portage
 FROM "${GENTOO_STAGE3_IMAGE}" as portage
 ARG GENTOO_PORTAGE_SNAPSHOT
-ARG PORTAGE_UNWANTED_PACKAGES
 ENV GENTOO_PORTAGE_SNAPSHOT="${GENTOO_PORTAGE_SNAPSHOT}"
-ENV PORTAGE_UNWANTED_PACKAGES="${PORTAGE_UNWANTED_PACKAGES}"
+ARG EMERGE_DEFAULT_OPTS
+ENV EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS}"
 RUN \
   mkdir -p /var/db/repos/gentoo && \
-    emerge-webrsync $( \
-      [ -n "${GENTOO_PORTAGE_SNAPSHOT}" ] && \
-        echo -n "--revert=${GENTOO_PORTAGE_SNAPSHOT}" \
-    )
+  emerge-webrsync $( \
+    [ -n "${GENTOO_PORTAGE_SNAPSHOT}" ] && \
+      echo -n "--revert=${GENTOO_PORTAGE_SNAPSHOT}" \
+  )
 ADD package.use /etc/portage/package.use
-RUN emerge --unmerge ${PORTAGE_UNWANTED_PACKAGES}
-
-# build packages
-FROM portage as packages
-ARG TARGET_ADDITION_PACKAGES
-ENV TARGET_ADDITION_PACKAGES="${TARGET_ADDITION_PACKAGES}"
-RUN --security=insecure \
-  emerge --buildpkg --emptytree \
-    sys-apps/busybox \
-    sys-kernel/gentoo-sources \
-    ${TARGET_ADDITION_PACKAGES}
 
 # build initramfs
 FROM portage as initramfs
+WORKDIR /initramfs
+ARG TARGET_CORE_PACKAGES
+ENV TARGET_CORE_PACKAGES="${TARGET_CORE_PACKAGES}"
 ARG TARGET_ADDITION_PACKAGES
 ENV TARGET_ADDITION_PACKAGES="${TARGET_ADDITION_PACKAGES}"
-COPY --from=packages /var/cache/binpkgs /var/cache/binpkgs
-WORKDIR /initramfs
+RUN --security=insecure \
+  emerge \
+      ${TARGET_CORE_PACKAGES} \
+      ${TARGET_ADDITION_PACKAGES}
+RUN --security=insecure \
+  emerge \
+    --root="/initramfs" \
+    --quickpkg-direct=y \
+    --quickpkg-direct-root="/" \
+    --with-bdeps=n \
+    --implicit-system-deps=n \
+      ${TARGET_CORE_PACKAGES} \
+      ${TARGET_ADDITION_PACKAGES}
 RUN mkdir \
   dev \
-  etc \
   proc \
   root \
   sys
@@ -60,15 +73,11 @@ RUN \
   mknod -m 444 dev/random  c 1 8 && \
   mknod -m 444 dev/urandom c 1 9 && \
   mknod -m 666 dev/zero    c 1 5
-RUN cp /etc/group /etc/passwd etc/
-RUN ROOT=/initramfs emerge --getbinpkgonly ${TARGET_ADDITION_PACKAGES}
 ADD init .
 
 # build kernel
-FROM portage as kernel
-COPY --from=initramfs /initramfs         /initramfs
-COPY --from=packages  /var/cache/binpkgs /var/cache/binpkgs
-RUN emerge --getbinpkgonly sys-kernel/gentoo-sources
+FROM initramfs as kernel
+RUN emerge sys-kernel/gentoo-sources
 WORKDIR /usr/src/linux
 ADD linux.conf .config
 RUN \

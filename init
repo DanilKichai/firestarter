@@ -13,7 +13,7 @@ mountpoint -q /sys/firmware/efi/efivars || \
 
 udevd --daemon
 
-echo "BusyBox Loader v0.3.0 (20230810)"
+echo "BusyBox Loader v0.3.0 (20230820)"
 echo ""
 echo "  █████████████████████████████████████"
 echo "  █████████████████████████████████████"
