@@ -1,6 +1,14 @@
 # https://www.gentoo.org/support/use-flags/
 
-*/* -debug -livecd -nls pam -readline -savedconfig -selinux -static -static-libs symlink -syslog -udev zlib
+*/* -acl -build -debug hardened headers-only iconv -livecd lvm -magic -man ncurses -nls -pam -python readline -savedconfig secureboot -selinux -slang -split-usr -static -static-libs symlink -syslog -test udev unicode -valgrind zlib
+app-crypt/tpm2-tools fapi
 sys-apps/busybox make-symlinks math -mdev -sep-usr -static -systemd
+sys-apps/debianutils -installkernel
 sys-apps/kexec-tools -booke lzma -xen
-sys-fs/eudev -kmod -rule-generator
+sys-apps/systemd-utils -boot -kmod -sysusers tmpfiles
+sys-apps/util-linux -audit -caps -cramfs -cryptsetup -fdformat -hardlink -kill -logger -pam -rtas -su -suid -tty-helpers
+sys-fs/btrfs-progs convert -reiserfs -static
+sys-fs/cryptsetup argon2 fips -gcrypt -kernel -nettle openssl pwquality ssh urandom
+sys-fs/dosfstools compat
+sys-fs/e2fsprogs -cron fuse tools
+sys-fs/lvm -sanlock thin

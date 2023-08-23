@@ -1,5 +1,5 @@
-GENTOO_PORTAGE_SNAPSHOT = 20230820
-GENTOO_STAGE3_IMAGE = "gentoo/stage3:musl-20230814"
+GENTOO_PORTAGE_SNAPSHOT = 20230821
+GENTOO_STAGE3_IMAGE = "gentoo/stage3:hardened-20230821"
 
 BUILDKIT_STEP_LOG_MAX_SIZE = 104857600
 
@@ -9,13 +9,11 @@ create_builder:
 	docker buildx create \
 		--name bbloader-builder \
 		--node bbloader-builder \
-		--buildkitd-flags "--allow-insecure-entitlement security.insecure" \
 		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=$(BUILDKIT_STEP_LOG_MAX_SIZE)"
 
 build_bbloader:
 	docker buildx build \
 		--builder bbloader-builder \
-		--allow security.insecure \
 		--progress plain \
 		--build-arg "GENTOO_STAGE3_IMAGE=$(GENTOO_STAGE3_IMAGE)" \
 		--build-arg "GENTOO_PORTAGE_SNAPSHOT=$(GENTOO_PORTAGE_SNAPSHOT)" \
