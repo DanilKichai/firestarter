@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 mountpoint -q /dev || \
@@ -11,9 +13,10 @@ mountpoint -q /sys || \
 mountpoint -q /sys/firmware/efi/efivars || \
   mount -t efivarfs efivarfs /sys/firmware/efi/efivars
 
-udevd --daemon
+/lib/systemd/systemd-udevd --daemon 1>/var/systemd-udevd.log 2>&1 || \
+  (cat /var/systemd-udevd.log && false)
 
-echo "BusyBox Loader v0.3.0 (20230820)"
+echo "BusyBox Loader v0.3.1 (20230821)"
 echo ""
 echo "  █████████████████████████████████████"
 echo "  █████████████████████████████████████"
@@ -41,11 +44,8 @@ echo ""
 if [ ! -e /source ]; then
   sed -nre 's/(^|.*[ ])(source=)([^ ]*).*/\3/p' /proc/cmdline | \
     base64 -d 2>/dev/null | \
-      gzip -d 1>/source 2>/dev/null
+      gzip -d 1>/source 2>/dev/null || \
+        exec setsid sh -c 'exec sh </dev/tty1 1>/dev/tty1 2>&1'
 fi
 
-if [ "$?" = 0 ]; then
-  source /source
-else
-  exec setsid sh -c 'exec sh </dev/tty1 1>/dev/tty1 2>&1'
-fi
+source /source
