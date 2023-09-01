@@ -13,6 +13,7 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   core/efibootmgr \
   core/gawk \
   core/grep \
+  core/gzip \
   core/lvm2 \
   core/sed \
   core/udev \
