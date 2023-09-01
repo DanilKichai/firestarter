@@ -13,8 +13,10 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   core/efibootmgr \
   core/gawk \
   core/grep \
+  core/gzip \
   core/lvm2 \
   core/sed \
+  core/systemd \
   core/udev \
   core/util-linux \
   extra/kexec-tools \
@@ -80,17 +82,20 @@ ARG INITRMFS_TARGET_PACKAGES
 RUN mkdir /tmp/pacman && \
   pacman --root /initramfs --dbpath /tmp/pacman -Suy --noconfirm \
     ${INITRMFS_TARGET_PACKAGES}
-ADD init .
+RUN ln -s /lib/systemd/systemd init
+RUN ln --symbolic --force /dev/null etc/systemd/system/systemd-logind.service
+ADD payload.conf etc/systemd/system/getty@tty1.service.d/
+ADD payload .
 
 # build kernel
 FROM initramfs as kernel
 WORKDIR /usr/src/linux
 RUN make -j "$(cat /proc/cpuinfo | grep processor | wc -l)"
 
-# pick out config
+# pick out kernel olddefconfig
 FROM scratch as olddefconfig
 COPY --from=pre-kernel /usr/src/linux/.config linux.conf
 
-# pick out kloader
-FROM scratch as kloader
-COPY --from=kernel /usr/src/linux/arch/x86/boot/bzImage kloader.efi
+# pick out build target
+FROM scratch as target
+COPY --from=kernel /usr/src/linux/arch/x86/boot/bzImage KLoader.efi

@@ -1,8 +1,9 @@
 This license file covers the following files:
 
-* Makefile
+* payload
+* payload.conf
 * Dockerfile
-* init
+* Makefile
 
 ----------------------------------------
 
