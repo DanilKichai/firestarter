@@ -1,32 +1,44 @@
-GENTOO_PORTAGE_SNAPSHOT = 20230821
-GENTOO_STAGE3_IMAGE = "gentoo/stage3:hardened-20230821"
+ARCHLINUX_BASE_IMAGE = "archlinux:base"
+LINUX_KERNEL_VERSION = ""
 
 BUILDKIT_STEP_LOG_MAX_SIZE = 104857600
 
-all: create_builder build_bbloader
+all:          create_builder build_kloader
+olddefconfig: create_builder build_olddefconfig
 
 create_builder:
 	docker buildx create \
-		--name bbloader-builder \
-		--node bbloader-builder \
+		--name kloader-builder \
+		--node kloader-builder \
 		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=$(BUILDKIT_STEP_LOG_MAX_SIZE)"
 
-build_bbloader:
+build_olddefconfig:
 	docker buildx build \
-		--builder bbloader-builder \
+		--builder kloader-builder \
 		--progress plain \
-		--build-arg "GENTOO_STAGE3_IMAGE=$(GENTOO_STAGE3_IMAGE)" \
-		--build-arg "GENTOO_PORTAGE_SNAPSHOT=$(GENTOO_PORTAGE_SNAPSHOT)" \
+		--build-arg "ARCHLINUX_BASE_IMAGE=$(ARCHLINUX_BASE_IMAGE)" \
+		--build-arg "LINUX_KERNEL_VERSION=$(LINUX_KERNEL_VERSION)" \
+		--target olddefconfig \
 		--output "type=local,dest=." \
 		.
 
-remove_bbloader:
-	rm -rf bbloader.efi
+build_kloader:
+	docker buildx build \
+		--builder kloader-builder \
+		--progress plain \
+		--build-arg "ARCHLINUX_BASE_IMAGE=$(ARCHLINUX_BASE_IMAGE)" \
+		--build-arg "LINUX_KERNEL_VERSION=$(LINUX_KERNEL_VERSION)" \
+		--target kloader \
+		--output "type=local,dest=." \
+		.
+
+remove_kloader:
+	rm -rf kloader.efi
 
 remove_builder:
 	docker buildx rm \
 		--force \
-		--builder bbloader-builder || \
+		--builder kloader-builder || \
 	true
 
-clean: remove_bbloader remove_builder
+clean: remove_kloader remove_builder
