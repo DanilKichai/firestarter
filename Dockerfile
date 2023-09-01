@@ -1,110 +1,96 @@
 # syntax=docker/dockerfile:1.2.1
 
 # set defaults
-ARG GENTOO_STAGE3_IMAGE="gentoo/stage3:hardened"
-ARG GENTOO_PORTAGE_SNAPSHOT=""
-ARG EMERGE_DEFAULT_OPTS=" \
-  --accept-properties=-interactive \
-  --jobs \
-  --newuse \
-  --update \
-  --oneshot \
-"
-ARG TARGET_CORE_PACKAGES=" \
-  sys-apps/busybox \
-  sys-apps/kexec-tools \
-  sys-apps/systemd-utils \
-"
-ARG TARGET_ADDITION_PACKAGES=" \
-  app-crypt/sbsigntools \
-  app-crypt/tpm2-tools \
-  sys-block/sedutil \
-  sys-boot/efibootmgr \
-  sys-fs/btrfs-progs \
-  sys-fs/cryptsetup \
-  sys-fs/dosfstools \
-  sys-fs/e2fsprogs \
-  sys-fs/lvm2 \
-"
-ARG TARGET_CLEANUP_PATHS=" \
-  etc/*- \
-  etc/conf.d \
-  etc/cron.* \
-  etc/csh.env \
-  etc/env.d \
-  etc/environment.d \
-  etc/gentoo-release \
-  etc/init.d \
-  etc/issue \
-  etc/issue.logo \
-  etc/kernel \
-  etc/os-release \
-  etc/portage \
-  etc/profile \
-  etc/profile.env \
-  etc/runlevels \
-  etc/sendbox.d \
-  etc/security \
-  linuxrc \
-  var \
+ARG ARCHLINUX_BASE_IMAGE="archlinux:base"
+ARG LINUX_KERNEL_VERSION=""
+ARG INITRMFS_TARGET_PACKAGES=" \
+  core/bash \
+  core/curl \
+  core/coreutils \
+  core/cryptsetup \
+  core/dosfstools \
+  core/e2fsprogs \
+  core/efibootmgr \
+  core/gawk \
+  core/grep \
+  core/lvm2 \
+  core/sed \
+  core/udev \
+  core/util-linux \
+  extra/kexec-tools \
+  extra/sbsigntools \
+  extra/tpm2-tools \
 "
 
-# build portage
-FROM "${GENTOO_STAGE3_IMAGE}" as portage
-ARG GENTOO_PORTAGE_SNAPSHOT
-ENV GENTOO_PORTAGE_SNAPSHOT="${GENTOO_PORTAGE_SNAPSHOT}"
-ARG EMERGE_DEFAULT_OPTS
-ENV EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS}"
+# build pre-kernel
+FROM "${ARCHLINUX_BASE_IMAGE}" as pre-kernel
+RUN pacman -Suy --noconfirm \
+  core/base-devel \
+  core/gettext \
+  core/libelf \
+  core/perl \
+  core/python \
+  core/tar \
+  core/xz \
+  extra/bc \
+  extra/cpio \
+  extra/git \
+  extra/lynx \
+  extra/pahole \
+  extra/wget
+ARG LINUX_KERNEL_VERSION
+WORKDIR /usr/src
 RUN \
-  mkdir -p /var/db/repos/gentoo && \
-  emerge-webrsync $( \
-    [ -n "${GENTOO_PORTAGE_SNAPSHOT}" ] && \
-      echo -n "--revert=${GENTOO_PORTAGE_SNAPSHOT}" \
-  )
-ADD package.use /etc/portage/package.use
-
-# build initramfs
-FROM portage as initramfs
-WORKDIR /initramfs
-ARG TARGET_CORE_PACKAGES
-ENV TARGET_CORE_PACKAGES="${TARGET_CORE_PACKAGES}"
-ARG TARGET_ADDITION_PACKAGES
-ENV TARGET_ADDITION_PACKAGES="${TARGET_ADDITION_PACKAGES}"
-RUN emerge \
-  --root=/initramfs \
-  --root-deps=rdeps \
-  --sysroot=/ \
-    ${TARGET_CORE_PACKAGES} \
-    ${TARGET_ADDITION_PACKAGES}
-ARG TARGET_CLEANUP_PATHS
-ENV TARGET_CLEANUP_PATHS="${TARGET_CLEANUP_PATHS}"
-RUN rm --recursive --force \
-  ${TARGET_CLEANUP_PATHS}
-RUN mkdir \
-  dev \
-  proc \
-  root \
-  sys \
-  var
-RUN \
-  mknod -m 622 dev/console c 5 1 && \
-  mknod -m 666 dev/null    c 1 3 && \
-  mknod -m 444 dev/random  c 1 8 && \
-  mknod -m 444 dev/urandom c 1 9 && \
-  mknod -m 666 dev/zero    c 1 5
-ADD init .
-
-# build kernel
-FROM initramfs as kernel
-RUN emerge sys-kernel/gentoo-sources
+  VERSION="$( \
+    if [ -z "${LINUX_KERNEL_VERSION}" ]; then \
+      lynx https://www.kernel.org/ --dump | \
+        grep 'stable:' | \
+          awk '{ print $2; exit }'; \
+    else \
+      echo "${LINUX_KERNEL_VERSION}"; \
+    fi \
+  )" && \
+  MAJOR="$( \
+    echo "${VERSION}" | \
+      awk -F '.' '{ print $1 }' \
+  )" && \
+  wget "https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${VERSION}.tar.xz" && \
+  tar -xvf "linux-${VERSION}.tar.xz" && \
+  chown -R "$(id -u):$(id -g)" "linux-${VERSION}" && \
+  ln -s "linux-${VERSION}" linux
 WORKDIR /usr/src/linux
+RUN make mrproper
 ADD linux.conf .config
 RUN \
   echo 'CONFIG_BLK_DEV_INITRD=y' >>.config && \
   echo 'CONFIG_INITRAMFS_SOURCE="/initramfs"' >>.config && \
   make olddefconfig
+
+# build initramfs
+FROM pre-kernel as initramfs
+WORKDIR /initramfs
+RUN \
+  mkdir dev && \
+  mknod -m 622 dev/console c 5 1 && \
+  mknod -m 666 dev/null    c 1 3 && \
+  mknod -m 444 dev/random  c 1 8 && \
+  mknod -m 444 dev/urandom c 1 9 && \
+  mknod -m 666 dev/zero    c 1 5
+ARG INITRMFS_TARGET_PACKAGES
+RUN mkdir /tmp/pacman && \
+  pacman --root /initramfs --dbpath /tmp/pacman -Suy --noconfirm \
+    ${INITRMFS_TARGET_PACKAGES}
+ADD init .
+
+# build kernel
+FROM initramfs as kernel
+WORKDIR /usr/src/linux
 RUN make -j "$(cat /proc/cpuinfo | grep processor | wc -l)"
 
-# pick out target
-FROM scratch
-COPY --from=kernel /usr/src/linux/arch/x86/boot/bzImage bbloader.efi
+# pick out config
+FROM scratch as olddefconfig
+COPY --from=pre-kernel /usr/src/linux/.config linux.conf
+
+# pick out kloader
+FROM scratch as kloader
+COPY --from=kernel /usr/src/linux/arch/x86/boot/bzImage kloader.efi
