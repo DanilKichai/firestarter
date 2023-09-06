@@ -8,8 +8,6 @@ KLoader is the customizable linux kernel loader for x86_64-efi systems with help
 
 #### Build:
 - make clean
-- make olddefconfigconfig
-- edit linux.conf
 - make
 
 #### Usage:
