@@ -19,6 +19,7 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   core/systemd \
   core/udev \
   core/util-linux \
+  extra/clevis \
   extra/kexec-tools \
   extra/sbsigntools \
   extra/tpm2-tools \
@@ -90,7 +91,12 @@ ADD payload .
 # build kernel
 FROM initramfs as kernel
 WORKDIR /usr/src/linux
-RUN make -j "$(cat /proc/cpuinfo | grep processor | wc -l)"
+RUN JOBS="$(cat /proc/cpuinfo | grep processor | wc -l)" && \
+  make -j "${JOBS}" && \
+  if grep --extended-regexp --quiet '^CONFIG_MODULES=y' .config; then \
+    make -j "${JOBS}" INSTALL_MOD_PATH=/initramfs modules_install; \
+    make -j "${JOBS}" bzImage; \
+  fi
 
 # pick out kernel olddefconfig
 FROM scratch as olddefconfig
