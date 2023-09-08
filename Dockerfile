@@ -2,6 +2,22 @@
 
 # set defaults
 ARG ARCHLINUX_BASE_IMAGE="archlinux:base"
+ARG ARCHLINUX_TOOLCHAIN_PACKAGES=" \
+  core/base-devel \
+  core/gettext \
+  core/libelf \
+  core/perl \
+  core/python \
+  core/sudo \
+  core/tar \
+  core/xz \
+  extra/bc \
+  extra/cpio \
+  extra/git \
+  extra/lynx \
+  extra/pahole \
+  extra/wget \
+"
 ARG LINUX_KERNEL_VERSION=""
 ARG INITRMFS_TARGET_PACKAGES=" \
   core/bash \
@@ -24,23 +40,35 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   extra/sbsigntools \
   extra/tpm2-tools \
 "
+ARG INITRMFS_TARGET_AUR_PACKAGES=" \
+  sedutil \
+"
+
+# build toolchain
+FROM "${ARCHLINUX_BASE_IMAGE}" as toolchain
+ARG ARCHLINUX_TOOLCHAIN_PACKAGES
+RUN pacman \
+  --sync \
+  --sysupgrade \
+  --refresh \
+  --noconfirm \
+  --needed \
+  ${ARCHLINUX_TOOLCHAIN_PACKAGES}
+RUN \
+  useradd makepkg --create-home && \
+  echo 'makepkg ALL=(ALL) NOPASSWD: ALL' >>/etc/sudoers.d/makepkg
+RUN \
+  mkdir /tmp/yay && \
+  cd /tmp/yay && \
+  git clone https://aur.archlinux.org/yay.git . && \
+  chown -R makepkg * . && \
+  sudo -u makepkg makepkg \
+    --syncdeps \
+    --noconfirm \
+    --install
 
 # build pre-kernel
-FROM "${ARCHLINUX_BASE_IMAGE}" as pre-kernel
-RUN pacman -Suy --noconfirm \
-  core/base-devel \
-  core/gettext \
-  core/libelf \
-  core/perl \
-  core/python \
-  core/tar \
-  core/xz \
-  extra/bc \
-  extra/cpio \
-  extra/git \
-  extra/lynx \
-  extra/pahole \
-  extra/wget
+FROM toolchain as pre-kernel
 ARG LINUX_KERNEL_VERSION
 WORKDIR /usr/src
 RUN \
@@ -79,11 +107,25 @@ RUN \
   mknod -m 444 dev/random  c 1 8 && \
   mknod -m 444 dev/urandom c 1 9 && \
   mknod -m 666 dev/zero    c 1 5
+RUN mkdir /tmp/pacman
 ARG INITRMFS_TARGET_PACKAGES
-RUN mkdir /tmp/pacman && \
-  pacman --root /initramfs --dbpath /tmp/pacman -Suy --noconfirm \
-    ${INITRMFS_TARGET_PACKAGES}
-RUN ln -s /lib/systemd/systemd init
+RUN pacman \
+  --root /initramfs \
+  --dbpath /tmp/pacman \
+  --sync \
+  --sysupgrade \
+  --refresh \
+  --noconfirm \
+  --needed \
+  ${INITRMFS_TARGET_PACKAGES}
+ARG INITRMFS_TARGET_AUR_PACKAGES
+RUN sudo -u makepkg yay \
+  --root /initramfs \
+  --dbpath /tmp/pacman \
+  --sync \
+  --noconfirm \
+  ${INITRMFS_TARGET_AUR_PACKAGES}
+RUN ln --symbolic --force /lib/systemd/systemd init
 RUN ln --symbolic --force /dev/null etc/systemd/system/systemd-logind.service
 ADD payload.conf etc/systemd/system/getty@tty1.service.d/
 ADD payload .
