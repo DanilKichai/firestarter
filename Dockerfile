@@ -69,8 +69,8 @@ RUN \
 
 # build pre-kernel
 FROM toolchain as pre-kernel
-ARG LINUX_KERNEL_VERSION
 WORKDIR /usr/src
+ARG LINUX_KERNEL_VERSION
 RUN \
   VERSION="$( \
     if [ -z "${LINUX_KERNEL_VERSION}" ]; then \
@@ -86,9 +86,9 @@ RUN \
       awk -F '.' '{ print $1 }' \
   )" && \
   wget "https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${VERSION}.tar.xz" && \
-  tar -xvf "linux-${VERSION}.tar.xz" && \
-  chown -R "$(id -u):$(id -g)" "linux-${VERSION}" && \
-  ln -s "linux-${VERSION}" linux
+  tar --extract --file "linux-${VERSION}.tar.xz" && \
+  chown --recursive "$(id -u):$(id -g)" "linux-${VERSION}" && \
+  ln --symbolic --force "linux-${VERSION}" linux
 WORKDIR /usr/src/linux
 RUN make mrproper
 ADD linux.conf .config
@@ -125,19 +125,22 @@ RUN sudo -u makepkg yay \
   --sync \
   --noconfirm \
   ${INITRMFS_TARGET_AUR_PACKAGES}
-RUN ln --symbolic --force /lib/systemd/systemd init
-RUN ln --symbolic --force /dev/null etc/systemd/system/systemd-logind.service
-ADD payload.conf etc/systemd/system/getty@tty1.service.d/
+RUN \
+  ln --symbolic --force /lib/systemd/systemd init && \
+  mv \
+    etc/systemd/system/getty.target.wants/getty@tty1.service \
+    etc/systemd/system/getty.target.wants/getty@console.service
+ADD payload.conf etc/systemd/system/getty@console.service.d/
 ADD payload .
 
 # build kernel
 FROM initramfs as kernel
 WORKDIR /usr/src/linux
-RUN JOBS="$(cat /proc/cpuinfo | grep processor | wc -l)" && \
-  make -j "${JOBS}" && \
+RUN JOBS="--jobs=$(cat /proc/cpuinfo | grep processor | wc --lines)" && \
+  make "${JOBS}" && \
   if grep --extended-regexp --quiet '^CONFIG_MODULES=y' .config; then \
-    make -j "${JOBS}" INSTALL_MOD_PATH=/initramfs modules_install; \
-    make -j "${JOBS}" bzImage; \
+    make "${JOBS}" INSTALL_MOD_PATH=/initramfs modules_install; \
+    make "${JOBS}" bzImage; \
   fi
 
 # pick out kernel olddefconfig
