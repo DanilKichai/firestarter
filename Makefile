@@ -3,16 +3,18 @@ LINUX_KERNEL_VERSION = ""
 
 BUILDKIT_STEP_LOG_MAX_SIZE = 104857600
 
-all:          create_builder build_target
-olddefconfig: create_builder build_olddefconfig
+.PHONY: all
+all: KLoader.efi
 
-create_builder:
+.PHONY: builder
+builder:
 	docker buildx create \
 		--name KLoader \
 		--node main \
 		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=$(BUILDKIT_STEP_LOG_MAX_SIZE)"
 
-build_olddefconfig:
+.PHONY: olddefconfig
+olddefconfig: builder
 	docker buildx build \
 		--builder KLoader \
 		--progress plain \
@@ -22,7 +24,7 @@ build_olddefconfig:
 		--output "type=local,dest=." \
 		.
 
-build_target:
+KLoader.efi: builder
 	docker buildx build \
 		--builder KLoader \
 		--progress plain \
@@ -32,13 +34,9 @@ build_target:
 		--output "type=local,dest=." \
 		.
 
-remove_target:
-	rm -rf KLoader.efi
-
-remove_builder:
-	docker buildx rm \
+.PHONY: clean
+clean:
+	-rm -rf KLoader.efi
+	-docker buildx rm \
 		--force \
-		--builder KLoader || \
-	true
-
-clean: remove_target remove_builder
+		--builder KLoader

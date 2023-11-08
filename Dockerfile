@@ -145,7 +145,7 @@ RUN JOBS="--jobs=$(cat /proc/cpuinfo | grep processor | wc --lines)" && \
 
 # pick out kernel olddefconfig
 FROM scratch as olddefconfig
-COPY --from=pre-kernel /usr/src/linux/.config linux.conf
+COPY --from=pre-kernel /usr/src/linux/.config linux.conf.grand
 
 # pick out build target
 FROM scratch as target
