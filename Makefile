@@ -36,7 +36,7 @@ KLoader.efi: builder
 
 .PHONY: clean
 clean:
-	-rm -rf KLoader.efi
+	-rm -rf KLoader.efi linux.conf.grand
 	-docker buildx rm \
 		--force \
 		--builder KLoader
