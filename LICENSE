@@ -1,7 +1,8 @@
 This license file covers the following files:
 
+* getty@console.conf
+* issue
 * payload
-* payload.conf
 * Dockerfile
 * Makefile
 

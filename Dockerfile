@@ -109,29 +109,34 @@ RUN \
   mknod -m 666 dev/zero    c 1 5
 RUN mkdir /tmp/pacman
 ARG INITRMFS_TARGET_PACKAGES
-RUN pacman \
-  --root /initramfs \
-  --dbpath /tmp/pacman \
-  --sync \
-  --sysupgrade \
-  --refresh \
-  --noconfirm \
-  --needed \
-  ${INITRMFS_TARGET_PACKAGES}
+RUN \
+  [[ "${INITRMFS_TARGET_PACKAGES}" =~ [.a-zA-Z0-9_\-] ]] && \
+    pacman \
+      --root /initramfs \
+      --dbpath /tmp/pacman \
+      --sync \
+      --sysupgrade \
+      --refresh \
+      --noconfirm \
+      --needed \
+      ${INITRMFS_TARGET_PACKAGES}
 ARG INITRMFS_TARGET_AUR_PACKAGES
-RUN sudo -u makepkg yay \
-  --root /initramfs \
-  --dbpath /tmp/pacman \
-  --sync \
-  --noconfirm \
-  ${INITRMFS_TARGET_AUR_PACKAGES}
+RUN \
+  [[ "${INITRMFS_TARGET_AUR_PACKAGES}" =~ [.a-zA-Z0-9_\-] ]] && \
+    sudo -u makepkg yay \
+      --root /initramfs \
+      --dbpath /tmp/pacman \
+      --sync \
+      --noconfirm \
+      ${INITRMFS_TARGET_AUR_PACKAGES}
 RUN \
   ln --symbolic --force /lib/systemd/systemd init && \
   mv \
     etc/systemd/system/getty.target.wants/getty@tty1.service \
     etc/systemd/system/getty.target.wants/getty@console.service
-ADD payload.conf etc/systemd/system/getty@console.service.d/
-ADD payload .
+ADD getty@console.conf etc/systemd/system/getty@console.service.d/override.conf
+ADD payload usr/local/bin/
+ADD issue etc/
 
 # build kernel
 FROM initramfs as kernel
