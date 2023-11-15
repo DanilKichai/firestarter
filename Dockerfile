@@ -17,7 +17,6 @@ ARG ARCHLINUX_TOOLCHAIN_PACKAGES=" \
   extra/lynx \
   extra/pahole \
   extra/wget \
-  extra/haveged \
 "
 ARG LINUX_KERNEL_VERSION=""
 ARG INITRMFS_TARGET_PACKAGES=" \
@@ -40,6 +39,7 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   extra/kexec-tools \
   extra/sbsigntools \
   extra/tpm2-tools \
+  extra/haveged \
 "
 ARG INITRMFS_TARGET_AUR_PACKAGES=" \
   sedutil \
@@ -136,7 +136,7 @@ RUN \
   mv \
     etc/systemd/system/getty.target.wants/getty@tty1.service \
     etc/systemd/system/getty.target.wants/getty@console.service && \
-  chroot . systemctl enable haveged
+  chroot . systemctl enable haveged.service
 ADD getty@console.conf etc/systemd/system/getty@console.service.d/override.conf
 ADD payload usr/local/bin/
 ADD issue etc/
