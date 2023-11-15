@@ -95,6 +95,7 @@ ADD linux.conf .config
 RUN \
   echo 'CONFIG_BLK_DEV_INITRD=y' >>.config && \
   echo 'CONFIG_INITRAMFS_SOURCE="/initramfs"' >>.config && \
+  echo 'CONFIG_MODULES=y' >>.config && \
   make olddefconfig
 
 # build initramfs
@@ -110,7 +111,7 @@ RUN \
 RUN mkdir /tmp/pacman
 ARG INITRMFS_TARGET_PACKAGES
 RUN \
-  [[ "${INITRMFS_TARGET_PACKAGES}" =~ [.a-zA-Z0-9_\-] ]] && \
+  [[ "${INITRMFS_TARGET_PACKAGES}" =~ ^[" "]*$ ]] || \
     pacman \
       --root /initramfs \
       --dbpath /tmp/pacman \
@@ -122,7 +123,7 @@ RUN \
       ${INITRMFS_TARGET_PACKAGES}
 ARG INITRMFS_TARGET_AUR_PACKAGES
 RUN \
-  [[ "${INITRMFS_TARGET_AUR_PACKAGES}" =~ [.a-zA-Z0-9_\-] ]] && \
+  [[ "${INITRMFS_TARGET_AUR_PACKAGES}" =~ ^[" "]*$ ]] || \
     sudo -u makepkg yay \
       --root /initramfs \
       --dbpath /tmp/pacman \
@@ -143,10 +144,8 @@ FROM initramfs as kernel
 WORKDIR /usr/src/linux
 RUN JOBS="--jobs=$(cat /proc/cpuinfo | grep processor | wc --lines)" && \
   make "${JOBS}" && \
-  if grep --extended-regexp --quiet '^CONFIG_MODULES=y' .config; then \
-    make "${JOBS}" INSTALL_MOD_PATH=/initramfs modules_install; \
-    make "${JOBS}" bzImage; \
-  fi
+  make "${JOBS}" INSTALL_MOD_PATH=/initramfs modules_install && \
+  make "${JOBS}" bzImage
 
 # pick out kernel olddefconfig
 FROM scratch as olddefconfig
