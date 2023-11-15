@@ -39,6 +39,7 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   extra/kexec-tools \
   extra/sbsigntools \
   extra/tpm2-tools \
+  extra/haveged \
 "
 ARG INITRMFS_TARGET_AUR_PACKAGES=" \
   sedutil \
@@ -134,7 +135,8 @@ RUN \
   ln --symbolic --force /lib/systemd/systemd init && \
   mv \
     etc/systemd/system/getty.target.wants/getty@tty1.service \
-    etc/systemd/system/getty.target.wants/getty@console.service
+    etc/systemd/system/getty.target.wants/getty@console.service && \
+  chroot . systemctl enable haveged.service
 ADD getty@console.conf etc/systemd/system/getty@console.service.d/override.conf
 ADD payload usr/local/bin/
 ADD issue etc/
