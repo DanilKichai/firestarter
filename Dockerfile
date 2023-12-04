@@ -76,7 +76,7 @@ RUN \
   VERSION="$( \
     if [ -z "${LINUX_KERNEL_VERSION}" ]; then \
       lynx https://www.kernel.org/ --dump | \
-        grep 'stable:' | \
+        grep 'longterm:' | \
           awk '{ print $2; exit }'; \
     else \
       echo "${LINUX_KERNEL_VERSION}"; \
