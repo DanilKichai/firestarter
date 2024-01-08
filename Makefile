@@ -13,6 +13,9 @@ builder:
 		--node main \
 		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=$(BUILDKIT_STEP_LOG_MAX_SIZE)"
 
+issue:
+	./issue.gen >issue
+
 .PHONY: olddefconfig
 olddefconfig: builder
 	docker buildx build \
@@ -24,7 +27,7 @@ olddefconfig: builder
 		--output "type=local,dest=." \
 		.
 
-KLoader.efi: builder
+KLoader.efi: builder issue
 	docker buildx build \
 		--builder KLoader \
 		--progress plain \
@@ -36,7 +39,7 @@ KLoader.efi: builder
 
 .PHONY: clean
 clean:
-	-rm -rf KLoader.efi linux.conf.grand
+	-rm -rf KLoader.efi issue linux.conf.grand
 	-docker buildx rm \
 		--force \
 		--builder KLoader

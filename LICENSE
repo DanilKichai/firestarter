@@ -1,8 +1,9 @@
 This license file covers the following files:
 
+* bootstrap
+* example.sh
 * getty@console.conf
-* issue
-* payload
+* issue.gen
 * Dockerfile
 * Makefile
 

@@ -1,4 +1,13 @@
-KLoader v0.5.5 (20231204)
+#!/bin/bash -e
+
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "${BRANCH}" =~ v[0-9]+.[0-9]+.[0-9]+ ]]; then
+  echo "KLoader ${BRANCH} ($(date --utc +%Y%m%d))"
+else
+  echo "KLoader git-$(git rev-parse --short HEAD) ($(date --utc +%Y%m%d))"
+fi
+
+cat <<EOF
 
   █████████████████████████████████████
   █████████████████████████████████████
@@ -21,3 +30,4 @@ KLoader v0.5.5 (20231204)
   █████████████████████████████████████
 
 https://github.com/DanilKichai/KLoader
+EOF

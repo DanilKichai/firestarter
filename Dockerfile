@@ -6,6 +6,7 @@ ARG ARCHLINUX_TOOLCHAIN_PACKAGES=" \
   core/base-devel \
   core/gettext \
   core/libelf \
+  core/links \
   core/perl \
   core/python \
   core/sudo \
@@ -14,7 +15,6 @@ ARG ARCHLINUX_TOOLCHAIN_PACKAGES=" \
   extra/bc \
   extra/cpio \
   extra/git \
-  extra/lynx \
   extra/pahole \
   extra/wget \
 "
@@ -30,14 +30,21 @@ ARG INITRMFS_TARGET_PACKAGES=" \
   core/gawk \
   core/grep \
   core/gzip \
+  core/iproute2 \
+  core/iputils \
+  core/less \
+  core/links \
   core/lvm2 \
+  core/nano \
   core/sed \
+  core/traceroute \
   core/systemd \
   core/udev \
   core/util-linux \
   extra/clevis \
   extra/kexec-tools \
   extra/sbsigntools \
+  extra/tcpdump \
   extra/tpm2-tools \
   extra/haveged \
 "
@@ -75,7 +82,7 @@ ARG LINUX_KERNEL_VERSION
 RUN \
   VERSION="$( \
     if [ -z "${LINUX_KERNEL_VERSION}" ]; then \
-      lynx https://www.kernel.org/ --dump | \
+      links -dump https://www.kernel.org/ | \
         grep 'longterm:' | \
           awk '{ print $2; exit }'; \
     else \
@@ -138,16 +145,16 @@ RUN \
     etc/systemd/system/getty.target.wants/getty@console.service && \
   chroot . systemctl enable haveged.service
 ADD getty@console.conf etc/systemd/system/getty@console.service.d/override.conf
-ADD payload usr/local/bin/
+ADD bootstrap usr/local/bin/
 ADD issue etc/
 
 # build kernel
 FROM initramfs as kernel
 WORKDIR /usr/src/linux
-RUN JOBS="--jobs=$(cat /proc/cpuinfo | grep processor | wc --lines)" && \
-  make "${JOBS}" && \
-  make "${JOBS}" INSTALL_MOD_PATH=/initramfs modules_install && \
-  make "${JOBS}" bzImage
+RUN \
+  make --jobs=$(nproc) && \
+  make --jobs=$(nproc) INSTALL_MOD_PATH=/initramfs modules_install && \
+  make --jobs=$(nproc) bzImage
 
 # pick out kernel olddefconfig
 FROM scratch as olddefconfig
