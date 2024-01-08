@@ -1,0 +1,133 @@
+#!/bin/bash -e
+
+PAYLOAD="/tmp/payload"
+read -a ARGUMENTS </proc/cmdline
+
+# TODO:
+# - parse EFI network vars
+# - render networkd config
+# - get DHCPINFORM bootfile
+# - export ARGUMENTS array
+
+# EFI_NET_MAC=aa:bb:cc:dd:ee:ff
+# EFI_NET_URL=http(s)://some.domain/KLoader.efi?arg1=...&arg2=...
+# EFI_NET_IP=192.168.128.11
+# EFI_NET_MASK=255.255.255.0
+# EFI_NET_GW=192.168.128.1
+# EFI_NET_DNS=192.168.128.1
+
+#od \
+#  /sys/firmware/efi/efivars/BootCurrent-8be4df61-93ca-11d2-aa0d-00e098032b8c
+#  --skip-bytes=4
+#  --read-bytes=2
+#  --format=x2
+#  --address-radix=none | \
+#    tr --delete '[:space:]'
+
+( # mount
+  PREFIX="/mnt"
+
+  for ARGUMENT in "${ARGUMENTS[@]}"; do
+    if [[ "${ARGUMENT}" =~ ^mount=.+@[^@]+$ ]]; then
+      TARGET=$(
+        sed \
+          --silent \
+          --regexp-extended \
+          --expression="s/^mount=(.+)@[^@]+$/\1/p" \
+          <(echo "${ARGUMENT}")
+      )
+
+      SOURCE=$(
+        sed \
+          --silent \
+          --regexp-extended \
+          --expression="s/^mount=.+@([^@]+)$/\1/p" \
+          <(echo "$ARGUMENT")
+      )
+
+      if ! DEVICE=$(
+        findfs "${SOURCE}" 2>/dev/null
+      ); then
+        echo "Unable to resolve source to mount: ${SOURCE}"
+        exit 1
+      fi
+
+      if ! mkdir -p "${PREFIX}/${TARGET}"; then
+        echo "Unable to create a directory for the mount to: ${PREFIX}/${TARGET}"
+        exit 1
+      fi
+
+      if ! mount "${DEVICE}" "${PREFIX}/${TARGET}"; then
+        echo "Mount failed: ${DEVICE}, ${PREFIX}/${TARGET}"
+      fi
+    fi
+  done
+)
+
+( # download
+  URL="$(
+    sed \
+      --silent \
+      --regexp-extended \
+      --expression="s/(^|.*[ ])url=([^ ]*).*$/\2/p" \
+      <(echo "${ARGUMENTS[@]}")
+  )"
+
+  if [ -n "${URL}" ]; then
+    if ! links -source "${URL}" >"${PAYLOAD}" 2>/dev/null; then
+      echo "Download failed: ${URL}"
+      exit 1
+    fi
+  fi
+)
+
+( # checksum
+  for PREFIX in md5 sha1 sha224 sha256 sha384 sha512 b2; do
+    case "${PREFIX}" in
+      "b2")
+      ALGORITHM="BLAKE2b"
+      ;;
+
+      *)
+      ALGORITHM="${PREFIX^^}"
+      ;;
+    esac
+
+    HASH="$(
+      sed \
+        --silent \
+        --regexp-extended \
+        --expression="s/(^|.*[ ])${PREFIX}sum=([^ ]*).*$/\2/p" \
+        <(echo "${ARGUMENTS[@]}")
+    )"
+
+    [ -z "${HASH}" ] && \
+      continue
+
+    if ! cksum \
+      --check \
+      <(echo "${ALGORITHM} (${PAYLOAD}) = ${HASH}") \
+      &>/dev/null
+    then
+      echo "Checksum failed: ${PREFIX}sum"
+      exit 1
+    fi
+  done
+)
+
+( # execute
+  SHELL="/bin/bash"
+
+  [ ! -e "${PAYLOAD}" ] && \
+    exec "${SHELL}"
+
+  if ! chmod +x "${PAYLOAD}"; then
+    echo "Change the mode of the file failed: +x, ${PAYLOAD}"
+    exit 1
+  fi
+
+  if ! "${PAYLOAD}"; then
+    echo "Execute failed: ${PAYLOAD}"
+    exit 1
+  fi
+)

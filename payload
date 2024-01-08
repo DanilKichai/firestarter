@@ -1,8 +1,0 @@
-#!/bin/bash -e
-
-sed -nre 's/(^|.*[ ])(source=)([^ ]*).*/\3/p' /proc/cmdline | \
-  base64 -d 2>/dev/null | \
-    gzip -d 1>/tmp/source 2>/dev/null || \
-      exec bash
-
-source /tmp/source
