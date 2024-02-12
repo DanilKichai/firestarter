@@ -3,30 +3,11 @@
 PAYLOAD="/tmp/payload"
 read -a ARGUMENTS </proc/cmdline
 
-# TODO:
-# - parse EFI network vars
-# - render networkd config
-# - get DHCPINFORM bootfile
-# - export ARGUMENTS array
-
-# EFI_NET_MAC=aa:bb:cc:dd:ee:ff
-# EFI_NET_URL=http(s)://some.domain/KLoader.efi?arg1=...&arg2=...
-# EFI_NET_IP=192.168.128.11
-# EFI_NET_MASK=255.255.255.0
-# EFI_NET_GW=192.168.128.1
-# EFI_NET_DNS=192.168.128.1
-
-#od \
-#  /sys/firmware/efi/efivars/BootCurrent-8be4df61-93ca-11d2-aa0d-00e098032b8c
-#  --skip-bytes=4
-#  --read-bytes=2
-#  --format=x2
-#  --address-radix=none | \
-#    tr --delete '[:space:]'
+( # logo
+  cat "$(dirname $0)/logo" 2>/dev/null
+)
 
 ( # mount
-  PREFIX="/mnt"
-
   for ARGUMENT in "${ARGUMENTS[@]}"; do
     if [[ "${ARGUMENT}" =~ ^mount=.+@[^@]+$ ]]; then
       TARGET=$(
@@ -52,13 +33,13 @@ read -a ARGUMENTS </proc/cmdline
         exit 1
       fi
 
-      if ! mkdir -p "${PREFIX}/${TARGET}"; then
+      if ! mkdir -p "${TARGET}"; then
         echo "Unable to create a directory for the mount to: ${PREFIX}/${TARGET}"
         exit 1
       fi
 
-      if ! mount "${DEVICE}" "${PREFIX}/${TARGET}"; then
-        echo "Mount failed: ${DEVICE}, ${PREFIX}/${TARGET}"
+      if ! mount "${DEVICE}" "${TARGET}"; then
+        echo "Mount failed: ${DEVICE}, ${TARGET}"
       fi
     fi
   done

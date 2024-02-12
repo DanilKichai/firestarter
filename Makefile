@@ -1,8 +1,3 @@
-ARCHLINUX_BASE_IMAGE = "archlinux:base"
-LINUX_KERNEL_VERSION = ""
-
-BUILDKIT_STEP_LOG_MAX_SIZE = 104857600
-
 .PHONY: all
 all: KLoader.efi
 
@@ -10,36 +5,22 @@ all: KLoader.efi
 builder:
 	docker buildx create \
 		--name KLoader \
-		--node main \
-		--driver-opt "env.BUILDKIT_STEP_LOG_MAX_SIZE=$(BUILDKIT_STEP_LOG_MAX_SIZE)"
+		--node main
 
-issue:
-	./issue.gen >issue
+logo:
+	bootstrap/logo.gen >bootstrap/logo
 
-.PHONY: olddefconfig
-olddefconfig: builder
+KLoader.efi: builder logo
 	docker buildx build \
 		--builder KLoader \
 		--progress plain \
-		--build-arg "ARCHLINUX_BASE_IMAGE=$(ARCHLINUX_BASE_IMAGE)" \
-		--build-arg "LINUX_KERNEL_VERSION=$(LINUX_KERNEL_VERSION)" \
-		--target olddefconfig \
-		--output "type=local,dest=." \
-		.
-
-KLoader.efi: builder issue
-	docker buildx build \
-		--builder KLoader \
-		--progress plain \
-		--build-arg "ARCHLINUX_BASE_IMAGE=$(ARCHLINUX_BASE_IMAGE)" \
-		--build-arg "LINUX_KERNEL_VERSION=$(LINUX_KERNEL_VERSION)" \
 		--target target \
 		--output "type=local,dest=." \
 		.
 
 .PHONY: clean
 clean:
-	-rm -rf KLoader.efi issue linux.conf.grand
+	-rm -rf KLoader.efi bootstrap/logo
 	-docker buildx rm \
 		--force \
 		--builder KLoader
