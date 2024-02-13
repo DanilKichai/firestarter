@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+build() {
+    command cp --recursive /target/* "${BUILDROOT}"
+}
+
+help() {
+    cat <<HELPEOF
+This hook provides KLoader target files.
+HELPEOF
+}

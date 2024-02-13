@@ -1,10 +1,13 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 
 PAYLOAD="/tmp/payload"
 read -a ARGUMENTS </proc/cmdline
 
 ( # logo
-  cat "$(dirname $0)/logo" 2>/dev/null
+  source /etc/os-release
+  echo -e "${NAME} ${VERSION_ID}\n"
+  qrencode -t ansiutf8 <<<"${HOME_URL}"
+  echo -e "\n${HOME_URL}\n"
 )
 
 ( # mount

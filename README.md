@@ -7,7 +7,6 @@ KLoader is minimized Linux especially designed to prepare environment and chainl
 ## Build dependencies:
 
 - docker buildx
-- git
 - internet
 - make
 

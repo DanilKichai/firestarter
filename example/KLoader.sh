@@ -1,10 +1,11 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 
 PREIFX="/mnt/root"
 UUID="$(findmnt --output UUID --noheadings "${PREIFX}")"
+APPEND="ro"
 
 kexec \
   --load "${PREIFX}/boot/vmlinuz" \
   --initrd="${PREIFX}/boot/initrd.img" \
-  --append="root=UUID=${UUID} ro quiet splash vt.handoff=7" 
+  --append="root=/dev/disk/by-uuid/${UUID} ${APPEND}" 
 kexec --exec

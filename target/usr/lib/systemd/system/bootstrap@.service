@@ -1,13 +1,11 @@
 [Unit]
 Description=Bootstrap on %I
-After=getty-pre.target
-After=systemd-modules-load.service
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
 
 [Service]
 Environment=TERM=linux HOME=/
-ExecStart=-/opt/bootstrap/bootstrap.sh
+ExecStart=/usr/local/bin/bootstrap
 Type=idle
 Restart=always
 RestartSec=0
@@ -22,5 +20,5 @@ SendSIGHUP=no
 Restart=no
 
 [Install]
-WantedBy=getty.target
+WantedBy=KLoader.target
 DefaultInstance=tty1

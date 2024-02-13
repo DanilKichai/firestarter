@@ -7,10 +7,7 @@ builder:
 		--name KLoader \
 		--node main
 
-logo:
-	bootstrap/logo.gen >bootstrap/logo
-
-KLoader.efi: builder logo
+KLoader.efi: builder
 	docker buildx build \
 		--builder KLoader \
 		--progress plain \
@@ -20,7 +17,7 @@ KLoader.efi: builder logo
 
 .PHONY: clean
 clean:
-	-rm -rf KLoader.efi bootstrap/logo
+	-rm -rf KLoader.efi
 	-docker buildx rm \
 		--force \
 		--builder KLoader
