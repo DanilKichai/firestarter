@@ -3,13 +3,6 @@
 PAYLOAD="/tmp/payload"
 read -a ARGUMENTS </proc/cmdline
 
-( # logo
-  source /etc/os-release
-  echo -e "${NAME} ${VERSION_ID}\n"
-  qrencode -t ansiutf8 <<<"${HOME_URL}"
-  echo -e "\n${HOME_URL}\n"
-)
-
 ( # mount
   for ARGUMENT in "${ARGUMENTS[@]}"; do
     if [[ "${ARGUMENT}" =~ ^mount=.+@[^@]+$ ]]; then

@@ -1,14 +1,14 @@
 [Unit]
 Description=Bootstrap on %I
 IgnoreOnIsolate=yes
-ConditionPathExists=/dev/tty0
+OnFailure=KLoader-rescue.target
+OnSuccessJobMode=replace-irreversibly
 
 [Service]
+Type=oneshot
 Environment=TERM=linux HOME=/
 ExecStart=/usr/local/bin/bootstrap
-Type=idle
-Restart=always
-RestartSec=0
+Restart=no
 StandardInput=tty
 StandardOutput=tty
 TTYPath=/dev/%I
@@ -17,8 +17,7 @@ TTYVHangup=no
 TTYVTDisallocate=no
 IgnoreSIGPIPE=no
 SendSIGHUP=no
-Restart=no
 
 [Install]
 WantedBy=KLoader.target
-DefaultInstance=tty1
+DefaultInstance=console

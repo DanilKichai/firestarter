@@ -1,1 +1,18 @@
-/usr/lib/systemd/systemd
+#!/usr/bin/env bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+source /etc/os-release
+
+echo "${NAME} ${VERSION_ID}"
+echo
+qrencode \
+  --type=ansiutf8 \
+  <<<"${HOME_URL}"
+echo
+echo "${HOME_URL}"
+echo
+
+exec \
+  /usr/lib/systemd/systemd \
+    --log-level=err \
+    --show-status=false
