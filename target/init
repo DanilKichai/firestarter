@@ -15,4 +15,5 @@ echo
 exec \
   /usr/lib/systemd/systemd \
     --log-level=err \
-    --show-status=false
+    --show-status=false \
+    --unit=KLoader-bootstrap.service

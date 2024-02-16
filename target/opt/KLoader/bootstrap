@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+PAYLOAD="/tmp/payload"
+read -a ARGUMENTS </proc/cmdline
+
+# mount
+for ARGUMENT in "${ARGUMENTS[@]}"; do
+  if [[ "${ARGUMENT}" =~ ^mount=.+@[^@]+$ ]]; then
+    SOURCE=$(
+      sed \
+        --silent \
+        --regexp-extended \
+        --expression="s/^mount=.+@([^@]+)$/\1/p" \
+        <(echo "$ARGUMENT")
+    )
+
+    TARGET=$(
+      sed \
+        --silent \
+        --regexp-extended \
+        --expression="s/^mount=(.+)@[^@]+$/\1/p" \
+        <(echo "${ARGUMENT}")
+    )
+
+    if ! timeout 30 udevadm wait "${SOURCE}"; then
+      echo "Mount source wait timeout: ${SOURCE}"
+      exit 1
+    fi
+
+    if ! mkdir -p "${TARGET}"; then
+      echo "Unable to create a directory for the mount to: ${TARGET}"
+      exit 1
+    fi
+
+    if ! mount "${SOURCE}" "${TARGET}"; then
+      echo "Mount failed: ${SOURCE}, ${TARGET}"
+      exit 1
+    fi
+  fi
+done
+
+# download
+URL="$(
+  sed \
+    --silent \
+    --regexp-extended \
+    --expression="s/(^|.*[ ])url=([^ ]*).*$/\2/p" \
+    <(echo "${ARGUMENTS[@]}")
+)"
+
+if [ -n "${URL}" ]; then
+  if ! links -source "${URL}" >"${PAYLOAD}" 2>/dev/null; then
+    echo "Download failed: ${URL}"
+    exit 1
+  fi
+fi
+
+# execute
+[ ! -e "${PAYLOAD}" ] && \
+  exec /bin/bash
+
+if ! chmod +x "${PAYLOAD}"; then
+  echo "Change the mode of the file failed: +x, ${PAYLOAD}"
+  exit 1
+fi
+
+if ! "${PAYLOAD}"; then
+  echo "Execute failed: ${PAYLOAD}"
+  exit 1
+fi

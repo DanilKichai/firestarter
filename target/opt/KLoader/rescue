@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+echo -e "\nPress the \"Enter\" key to drop into the debug shell..."
+if timeout 30 bash -c read; then
+  /bin/bash
+fi
+
+systemctl reboot
