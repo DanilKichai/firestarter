@@ -1,7 +1,5 @@
 [Unit]
-Description=KLoader Target
-OnFailure=reboot.target
-OnFailureJobMode=replace-irreversibly
+Description=KLoader
 AssertPathExists=/etc/initrd-release
 Requires=basic.target
 After=basic.target
