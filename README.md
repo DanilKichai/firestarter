@@ -22,6 +22,10 @@ make
 ```
 mkdir -p /boot/efi/EFI/KLoader
 cp KLoader.efi /boot/efi/EFI/KLoader/
-cp example/KLoader.sh /boot/
-efibootmgr -c -d /dev/nvme0n1 -p 1 -L "KLoader" -l "\EFI\KLoader\KLoader.efi" -u "url=file:///mnt/root/boot/KLoader.sh mount=/mnt/root@/dev/disk/by-uuid/$(findmnt --output UUID --noheadings /)"
+efibootmgr -c -d /dev/nvme0n1 -p 1 -L "KLoader" -l "\EFI\KLoader\KLoader.efi"
+```
+
+## Configure:
+```
+sed --expression="s/98ee92a2-d538-44aa-bfd5-4d8d8f8896f0/$(findmnt --output UUID --noheadings /)/" <example/KLoader.sh
 ```

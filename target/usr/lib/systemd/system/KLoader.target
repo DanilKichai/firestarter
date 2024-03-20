@@ -1,6 +1,0 @@
-[Unit]
-Description=KLoader
-AssertPathExists=/etc/initrd-release
-Requires=basic.target
-After=basic.target
-AllowIsolate=yes

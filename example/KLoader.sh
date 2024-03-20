@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 
-PREIFX="/mnt/root"
-UUID="$(findmnt --output UUID --noheadings "${PREIFX}")"
-APPEND="ro"
+ROOT="/dev/disk/by-uuid/98ee92a2-d538-44aa-bfd5-4d8d8f8896f0"
+
+udevadm \
+  wait --timeout=30 \
+    "${ROOT}"
+mount \
+  --options ro \
+  --source "${ROOT}" \
+  --target /mnt
 
 kexec \
-  --load "${PREIFX}/boot/vmlinuz" \
-  --initrd="${PREIFX}/boot/initrd.img" \
-  --append="root=/dev/disk/by-uuid/${UUID} ${APPEND}" 
-kexec --exec
+  --load "/mnt/boot/vmlinuz" \
+  --initrd="/mnt/boot/initrd.img" \
+  --append="root=${ROOT} ro" 
+kexec \
+  --exec

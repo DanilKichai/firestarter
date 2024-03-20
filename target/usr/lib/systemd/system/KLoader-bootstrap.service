@@ -1,0 +1,17 @@
+[Unit]
+Description=KLoader Bootstrap
+Requires=basic.target
+After=basic.target
+OnFailure=KLoader-rescue.service
+
+[Service]
+Type=oneshot
+Environment=TERM=linux HOME=/
+ExecStart=/opt/KLoader/bootstrap
+Restart=no
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/console
+TTYReset=no
+TTYVHangup=no
+TTYVTDisallocate=no
