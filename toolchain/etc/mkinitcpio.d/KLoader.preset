@@ -1,9 +1,0 @@
-ALL_config="/etc/KLoader.conf"
-ALL_kver="/boot/vmlinuz-linux"
-#ALL_microcode=(/boot/*-ucode.img)
-
-PRESETS=('KLoader')
-
-KLoader_image="/boot/KLoader.img"
-KLoader_uki="/boot/KLoader.efi"
-KLoader_options="--uefistub /usr/lib/systemd/boot/efi/linuxx64.efi.stub"

@@ -1,15 +1,15 @@
 .PHONY: all
-all: KLoader.efi
+all: firestarter.efi
 
 .PHONY: builder
 builder:
 	docker buildx create \
-		--name KLoader \
+		--name firestarter \
 		--node main
 
-KLoader.efi: builder
+firestarter.efi: builder
 	docker buildx build \
-		--builder KLoader \
+		--builder firestarter \
 		--progress plain \
 		--target target \
 		--output "type=local,dest=." \
@@ -17,7 +17,7 @@ KLoader.efi: builder
 
 .PHONY: clean
 clean:
-	-rm -rf KLoader.efi
+	-rm -rf firestarter.efi
 	-docker buildx rm \
 		--force \
-		--builder KLoader
+		--builder firestarter
