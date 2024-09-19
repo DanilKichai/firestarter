@@ -1,6 +1,16 @@
 # syntax=docker/dockerfile:1.2.1
 
-FROM --platform=linux/amd64 archlinux:base as builder
+FROM --platform=linux/amd64 golang:latest as builder
+  COPY src/bootstrap /usr/src/bootstrap
+  RUN \
+    CGO_ENABLED="0" \
+      go build \
+        -C /usr/src/bootstrap \
+        -ldflags='-extldflags=-static' \
+        -o /opt/firestarter/bootstrap \
+        .
+
+FROM --platform=linux/amd64 archlinux:base as wrapper
   RUN \
     pacman \
       --sync \
@@ -53,7 +63,9 @@ FROM --platform=linux/amd64 archlinux:base as builder
       extra/tpm2-tools
   ADD target/ /target/
 
-  RUN mkinitcpio --preset KLoader
+  COPY --from=builder /opt/firestarter/bootstrap /target/opt/firestarter/
+
+  RUN mkinitcpio --preset wrapper
 
 FROM scratch as target
-  COPY --from=builder /boot/KLoader.efi KLoader.efi
+  COPY --from=wrapper /boot/wrapper.efi firestarter.efi

@@ -16,4 +16,4 @@ exec \
   /usr/lib/systemd/systemd \
     --log-level=err \
     --show-status=false \
-    --unit=KLoader-bootstrap.service
+    --unit=firestarter.target

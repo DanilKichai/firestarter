@@ -1,0 +1,17 @@
+[Unit]
+Description=Firestarter Runner
+After=basic.target network-online.target
+IgnoreOnIsolate=yes
+ConditionPathExists=/dev/tty0
+
+[Service]
+Type=idle
+Environment=TERM=linux HOME=/ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/KLoader/runner
+Restart=no
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty1
+TTYReset=no
+TTYVHangup=no
+TTYVTDisallocate=no

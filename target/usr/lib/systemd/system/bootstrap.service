@@ -1,0 +1,9 @@
+[Unit]
+Description=Firestarter Bootstrap
+After=sysinit.target
+Before=systemd-networkd.service
+
+[Service]
+Type=oneshot
+Restart=no
+ExecStart=/opt/firestarter/bootstrap
