@@ -64,6 +64,7 @@ FROM --platform=linux/amd64 archlinux:base as wrapper
   ADD target/ /target/
 
   COPY --from=builder /opt/firestarter/bootstrap /target/opt/firestarter/
+  RUN echo -e "debug\ndebug" | passwd --root /target
 
   RUN mkinitcpio --preset wrapper
 
