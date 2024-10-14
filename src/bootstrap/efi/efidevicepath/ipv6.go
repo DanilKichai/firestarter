@@ -1,8 +1,8 @@
 package efidevicepath
 
 import (
+	"bootstrap/efi/common"
 	"encoding/binary"
-	"fmt"
 )
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#ipv6-device-path
@@ -28,7 +28,7 @@ type IPv6 struct {
 
 func (ip *IPv6) UnmarshalBinary(data []byte) error {
 	if len(data) < 56 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
 	ip.LocalIPAddress = data[0:16]

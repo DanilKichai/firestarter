@@ -1,7 +1,7 @@
 package efidevicepath
 
 import (
-	"fmt"
+	"bootstrap/efi/common"
 )
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#dns-device-path
@@ -17,7 +17,7 @@ type EFIIPAddress []byte
 
 func (d *DNS) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
 	switch data[0:1][0] {
@@ -26,7 +26,7 @@ func (d *DNS) UnmarshalBinary(data []byte) error {
 	case 0x01:
 		d.IsIPv6 = true
 	default:
-		return fmt.Errorf("invalid boolean value representation found")
+		return ErrInvalidBooleanRepresentation
 	}
 
 	for i := 0; i < (len(data)-1)/128; i++ {

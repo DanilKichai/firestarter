@@ -1,8 +1,8 @@
 package efidevicepath
 
 import (
+	"bootstrap/efi/common"
 	"encoding/binary"
-	"fmt"
 )
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#hard-drive
@@ -20,7 +20,7 @@ type HardDrive struct {
 
 func (hd *HardDrive) UnmarshalBinary(data []byte) error {
 	if len(data) < 24 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
 	hd.PartitionNumber = binary.LittleEndian.Uint32(data[0:4])

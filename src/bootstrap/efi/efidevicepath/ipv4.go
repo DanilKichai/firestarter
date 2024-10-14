@@ -1,8 +1,8 @@
 package efidevicepath
 
 import (
+	"bootstrap/efi/common"
 	"encoding/binary"
-	"fmt"
 )
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#ipv4-device-path
@@ -22,7 +22,7 @@ type IPv4 struct {
 
 func (ip *IPv4) UnmarshalBinary(data []byte) error {
 	if len(data) < 23 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
 	ip.LocalIPAddress = data[0:4]
@@ -37,7 +37,7 @@ func (ip *IPv4) UnmarshalBinary(data []byte) error {
 	case 0x01:
 		ip.StaticIPAddress = true
 	default:
-		return fmt.Errorf("invalid boolean value representation found")
+		return ErrInvalidBooleanRepresentation
 	}
 
 	ip.GatewayIPAddress = data[15:19]

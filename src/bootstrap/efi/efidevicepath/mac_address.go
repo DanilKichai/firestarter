@@ -1,8 +1,6 @@
 package efidevicepath
 
-import (
-	"fmt"
-)
+import "bootstrap/efi/common"
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#mac-address-device-path
 
@@ -15,7 +13,7 @@ type MACAddress struct {
 
 func (ma *MACAddress) UnmarshalBinary(data []byte) error {
 	if len(data) < 33 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
 	ma.MACAddress = data[0:32]

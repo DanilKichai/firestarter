@@ -4,22 +4,12 @@ import (
 	"bootstrap/efi/common"
 	"encoding"
 	"fmt"
-	"io"
 	"os"
+	"path/filepath"
 )
 
-const (
-	efivars = "/sys/firmware/efi/efivars"
-)
-
-func ParseVar[T encoding.BinaryUnmarshaler](name string, guid string) (T, error) {
-	f, err := os.Open(fmt.Sprintf("%s/%s-%s", efivars, name, guid))
-	if err != nil {
-		return common.Nil[T](), fmt.Errorf("failed to open file: %w", err)
-	}
-	defer f.Close()
-
-	data, err := io.ReadAll(f)
+func ParseVar[T encoding.BinaryUnmarshaler](efivars string, name string, guid string) (T, error) {
+	data, err := os.ReadFile(filepath.Join(efivars, fmt.Sprintf("%s-%s", name, guid)))
 	if err != nil {
 		return common.Nil[T](), fmt.Errorf("failed to read file: %w", err)
 	}

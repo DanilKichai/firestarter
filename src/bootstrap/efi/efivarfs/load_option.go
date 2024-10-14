@@ -1,9 +1,10 @@
 package efivarfs
 
 import (
+	"bootstrap/efi/common"
 	"encoding/binary"
+	"errors"
 	"fmt"
-	"unicode/utf16"
 )
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#efi-device-path-protocol
@@ -15,20 +16,24 @@ type FilePath struct {
 
 type FilePathList []FilePath
 
-func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
-	if len(data) == 0 {
-		return nil, nil
-	}
+var (
+	ErrIncorrectFilePathLength = errors.New("got incorrect \"FilePath\" length")
+)
 
+func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
 	if len(data) < 4 {
-		return nil, fmt.Errorf("unmarshal data is too short")
+		return nil, common.ErrDataIsTooShort
 	}
 
 	t := binary.LittleEndian.Uint16(data[0:2])
 	l := binary.LittleEndian.Uint16(data[2:4])
 
+	if l < 4 {
+		return nil, ErrIncorrectFilePathLength
+	}
+
 	if len(data) < int(l) {
-		return nil, fmt.Errorf("unmarshal data is too short")
+		return nil, common.ErrDataIsTooShort
 	}
 
 	fp := FilePath{
@@ -44,7 +49,7 @@ func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
 func (fpl *FilePathList) UnmarshalBinary(data []byte) (err error) {
 	for len(data) > 0 {
 		if data, err = fpl.AppendFilePathFromBinary(data); err != nil {
-			return fmt.Errorf("the \"FilePathList\" data parse error occured: %w", err)
+			return fmt.Errorf("the \"FilePath\" data parse error occured: %w", err)
 		}
 	}
 
@@ -63,40 +68,24 @@ type LoadOption struct {
 
 func (lo *LoadOption) UnmarshalBinary(data []byte) error {
 	if len(data) < 10 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
 	lo.Attributes = binary.LittleEndian.Uint32(data[4:8])
 	lo.FilePathListLength = binary.LittleEndian.Uint16(data[8:10])
 
-	term := false
-	var offset int
-	var desc []uint16
-
-	for offset = 10; offset < len(data)-1; offset += 2 {
-		char := binary.LittleEndian.Uint16(data[offset : offset+2])
-
-		if char == 0 {
-			term = true
-			offset += 2
-
-			break
-		}
-
-		desc = append(desc, char)
+	desc, offset, err := common.GetNullTerminatedUnicodeString(data, 10)
+	if err != nil {
+		return fmt.Errorf("the \"Description\" data parse error occured: %w", err)
 	}
 
-	if !term {
-		return fmt.Errorf("the \"Description\" data doesn't have a null-terminated")
-	}
-
-	lo.Description = string(utf16.Decode(desc))
+	lo.Description = desc
 
 	if len(data) < offset+int(lo.FilePathListLength) {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataIsTooShort
 	}
 
-	err := lo.FilePathList.UnmarshalBinary(data[offset : offset+int(lo.FilePathListLength)])
+	err = lo.FilePathList.UnmarshalBinary(data[offset : offset+int(lo.FilePathListLength)])
 	if err != nil {
 		return fmt.Errorf("the \"FilePathList\" data parse error occured: %w", err)
 	}
