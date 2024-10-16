@@ -17,32 +17,32 @@ func TestGetNullTerminatedUnicodeString(t *testing.T) {
 		expectedErr    error
 	}{
 		{
-			caseName:       "correct (without offset)",
+			caseName:       "valid data (without offset)",
 			data:           []byte{116, 0, 101, 0, 115, 0, 116, 0, 0, 0},
 			offset:         0,
 			expectedString: "test",
 			expectedOffset: 10,
 		},
 		{
-			caseName:       "correct (with offset)",
+			caseName:       "valid data (with offset)",
 			data:           []byte{116, 0, 101, 0, 115, 0, 116, 0, 0, 0},
 			offset:         4,
 			expectedString: "st",
 			expectedOffset: 10,
 		},
 		{
-			caseName:       "incorrect offset",
+			caseName:       "invalid offset",
 			data:           []byte{116, 0, 101, 0, 115, 0, 116, 0, 0, 0},
 			offset:         9,
 			expectedString: "",
-			expectedErr:    ErrDataIsTooShort,
+			expectedErr:    ErrDataSize,
 		},
 		{
-			caseName:       "unterminated",
+			caseName:       "unterminated data",
 			data:           []byte{116, 0, 101, 0, 115, 0, 116, 0},
 			offset:         0,
 			expectedString: "",
-			expectedErr:    ErrDataIsTooShort,
+			expectedErr:    ErrDataSize,
 		},
 	}
 

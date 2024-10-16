@@ -7,7 +7,7 @@ import (
 
 func GetNullTerminatedUnicodeString(data []byte, offset int) (string, int, error) {
 	if offset+2 > len(data) {
-		return "", offset, ErrDataIsTooShort
+		return "", offset, ErrDataSize
 	}
 
 	term := false
@@ -27,7 +27,7 @@ func GetNullTerminatedUnicodeString(data []byte, offset int) (string, int, error
 	}
 
 	if !term {
-		return "", offset, ErrDataIsTooShort
+		return "", offset, ErrDataSize
 	}
 
 	return string(utf16.Decode(ustr)), offset, nil

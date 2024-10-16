@@ -25,7 +25,7 @@ func (eip EFIIPAddress) Addr(isIPv6 bool) netip.Addr {
 
 func (d *DNS) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return common.ErrDataIsTooShort
+		return common.ErrDataSize
 	}
 
 	var isIPv6 bool
@@ -35,12 +35,16 @@ func (d *DNS) UnmarshalBinary(data []byte) error {
 	case 0x01:
 		isIPv6 = true
 	default:
-		return ErrInvalidBooleanRepresentation
+		return common.ErrDataRepresentation
 	}
 
 	resolvers := data[1:]
-	for i := 0; i < len(resolvers); i += 128 {
-		a := EFIIPAddress(resolvers[i : i+128]).Addr(isIPv6)
+	if len(resolvers)%16 != 0 {
+		return common.ErrDataSize
+	}
+
+	for i := 0; i < len(resolvers); i += 16 {
+		a := EFIIPAddress(resolvers[i : i+16]).Addr(isIPv6)
 		d.Instances = append(d.Instances, a)
 	}
 

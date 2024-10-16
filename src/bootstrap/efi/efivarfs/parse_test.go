@@ -11,40 +11,62 @@ import (
 
 func TestParseVar(t *testing.T) {
 	var testCases_BootCurrent = []struct {
-		caseName           string
-		efivars            string
-		name               string
-		guid               string
-		expectedResult     interface{}
-		expectedResultType string
-		expectedErr        error
+		caseName       string
+		efivars        string
+		name           string
+		guid           string
+		expectedResult *BootCurrent
+		expectedErr    error
 	}{
 		{
-			caseName:           "correct BootCurrent",
-			efivars:            "fixtures",
-			name:               "BootCurrent",
-			guid:               GlobalVariable,
-			expectedResult:     &[]BootCurrent{0x1002}[0],
-			expectedResultType: "*efivarfs.BootCurrent",
+			caseName:       "valid BootCurrent",
+			efivars:        "fixtures",
+			name:           "BootCurrent",
+			guid:           GlobalVariable,
+			expectedResult: &[]BootCurrent{0x1002}[0],
 		},
 		{
-			caseName:           "incorrect BootCurrent with too short(BootCurrent,5)",
-			efivars:            "fixtures",
-			name:               "BootCurrent_short(BootCurrent,5)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.BootCurrent",
-			expectedErr:        common.ErrDataIsTooShort,
+			caseName:    "invalid BootCurrent with too short(BootCurrent,5)",
+			efivars:     "fixtures",
+			name:        "BootCurrent_short(BootCurrent,5)",
+			guid:        GlobalVariable,
+			expectedErr: common.ErrDataSize,
 		},
 		{
-			caseName:           "not exists BootCurrent",
-			efivars:            "fixtures",
-			name:               "BootCurrent_not_exists",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.BootCurrent",
-			expectedErr:        os.ErrNotExist,
+			caseName:    "not exists BootCurrent",
+			efivars:     "fixtures",
+			name:        "BootCurrent_not_exists",
+			guid:        GlobalVariable,
+			expectedErr: os.ErrNotExist,
 		},
+	}
+
+	for _, testCase := range testCases_BootCurrent {
+		t.Run(testCase.caseName, func(t *testing.T) {
+			current, err := ParseVar[*BootCurrent](testCase.efivars, testCase.name, testCase.guid)
+
+			if testCase.expectedErr != nil {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, testCase.expectedErr)
+				assert.Nil(t, current)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, current)
+				assert.Equal(t, testCase.expectedResult, current)
+			}
+		})
+	}
+
+	var testCases_LoadOption = []struct {
+		caseName       string
+		efivars        string
+		name           string
+		guid           string
+		expectedResult *LoadOption
+		expectedErr    error
+	}{
 		{
-			caseName: "correct LoadOption",
+			caseName: "valid LoadOption",
 			efivars:  "fixtures",
 			name:     "Boot1002",
 			guid:     GlobalVariable,
@@ -83,14 +105,12 @@ func TestParseVar(t *testing.T) {
 				},
 				OptionalData: []uint8{},
 			}}[0],
-			expectedResultType: "*efivarfs.LoadOption",
 		},
 		{
-			caseName:           "empty LoadOption with empty(FilePathList)",
-			efivars:            "fixtures",
-			name:               "Boot1002_empty(FilePathList)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
+			caseName: "invalid LoadOption with empty(FilePathList)",
+			efivars:  "fixtures",
+			name:     "Boot1002_empty(FilePathList)",
+			guid:     GlobalVariable,
 			expectedResult: &[]LoadOption{{
 				Attributes:         0x1,
 				FilePathListLength: 0x0,
@@ -100,81 +120,62 @@ func TestParseVar(t *testing.T) {
 			}}[0],
 		},
 		{
-			caseName:           "incorrect LoadOption with unterminated(Description)",
-			efivars:            "fixtures",
-			name:               "Boot1002_unterminated(Description)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
-			expectedErr:        common.ErrDataIsTooShort,
+			caseName:    "invalid LoadOption with unterminated(Description)",
+			efivars:     "fixtures",
+			name:        "Boot1002_unterminated(Description)",
+			guid:        GlobalVariable,
+			expectedErr: common.ErrDataSize,
 		},
 		{
-			caseName:           "incorrect LoadOption with too short(FilePath,3)",
-			efivars:            "fixtures",
-			name:               "Boot1002_short(FilePath,3)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
-			expectedErr:        ErrIncorrectFilePathLength,
+			caseName:    "invalid LoadOption with too short(FilePath,3)",
+			efivars:     "fixtures",
+			name:        "Boot1002_short(FilePath,3)",
+			guid:        GlobalVariable,
+			expectedErr: ErrIncorrectFilePathLength,
 		},
 		{
-			caseName:           "incorrect LoadOption with too long(FilePath,out_of_range)",
-			efivars:            "fixtures",
-			name:               "Boot1002_long(FilePath,out_of_range)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
-			expectedErr:        common.ErrDataIsTooShort,
+			caseName:    "invalid LoadOption with too long(FilePath,out_of_range)",
+			efivars:     "fixtures",
+			name:        "Boot1002_long(FilePath,out_of_range)",
+			guid:        GlobalVariable,
+			expectedErr: common.ErrDataSize,
 		},
 		{
-			caseName:           "incorrect LoadOption with too long(FilePathList,out_of_range)",
-			efivars:            "fixtures",
-			name:               "Boot1002_long(FilePathList,out_of_range)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
-			expectedErr:        common.ErrDataIsTooShort,
+			caseName:    "invalid LoadOption with too long(FilePathList,out_of_range)",
+			efivars:     "fixtures",
+			name:        "Boot1002_long(FilePathList,out_of_range)",
+			guid:        GlobalVariable,
+			expectedErr: common.ErrDataSize,
 		},
 		{
-			caseName:           "incorrect LoadOption with too short(LoadOption,9)",
-			efivars:            "fixtures",
-			name:               "Boot1002_short(LoadOption,9)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
-			expectedErr:        common.ErrDataIsTooShort,
+			caseName:    "invalid LoadOption with too short(LoadOption,9)",
+			efivars:     "fixtures",
+			name:        "Boot1002_short(LoadOption,9)",
+			guid:        GlobalVariable,
+			expectedErr: common.ErrDataSize,
 		},
 		{
-			caseName:           "incorrect LoadOption with too short(FilePathList,3)",
-			efivars:            "fixtures",
-			name:               "Boot1002_short(FilePathList,3)",
-			guid:               GlobalVariable,
-			expectedResultType: "*efivarfs.LoadOption",
-			expectedErr:        common.ErrDataIsTooShort,
+			caseName:    "invalid LoadOption with too short(FilePathList,3)",
+			efivars:     "fixtures",
+			name:        "Boot1002_short(FilePathList,3)",
+			guid:        GlobalVariable,
+			expectedErr: common.ErrDataSize,
 		},
 	}
 
-	for _, testCase := range testCases_BootCurrent {
+	for _, testCase := range testCases_LoadOption {
 		t.Run(testCase.caseName, func(t *testing.T) {
-			var (
-				err error
-				res interface{}
-			)
-
-			switch testCase.expectedResultType {
-			case "*efivarfs.BootCurrent":
-				res, err = ParseVar[*BootCurrent](testCase.efivars, testCase.name, testCase.guid)
-			case "*efivarfs.LoadOption":
-				res, err = ParseVar[*LoadOption](testCase.efivars, testCase.name, testCase.guid)
-			default:
-				t.Fatalf("Unexpected type provided: %s", testCase.expectedResultType)
-			}
+			entry, err := ParseVar[*LoadOption](testCase.efivars, testCase.name, testCase.guid)
 
 			if testCase.expectedErr != nil {
 				require.Error(t, err)
 				assert.ErrorIs(t, err, testCase.expectedErr)
-				assert.Nil(t, res)
+				assert.Nil(t, entry)
 			} else {
 				assert.NoError(t, err)
-				require.NotNil(t, res)
-				assert.Equal(t, testCase.expectedResult, res)
+				require.NotNil(t, entry)
+				assert.Equal(t, testCase.expectedResult, entry)
 			}
 		})
 	}
-
 }

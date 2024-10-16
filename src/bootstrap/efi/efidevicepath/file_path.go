@@ -16,7 +16,7 @@ type FilePath struct {
 func (fp *FilePath) UnmarshalBinary(data []byte) error {
 	file, _, err := common.GetNullTerminatedUnicodeString(data, 0)
 	if err != nil {
-		return fmt.Errorf("the \"FilePathList\" data parse error occured: %w", err)
+		return fmt.Errorf("the \"FilePath\" data parse error occured: %w", err)
 	}
 
 	fp.PathName = file

@@ -22,7 +22,7 @@ var (
 
 func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
 	if len(data) < 4 {
-		return nil, common.ErrDataIsTooShort
+		return nil, common.ErrDataSize
 	}
 
 	t := binary.LittleEndian.Uint16(data[0:2])
@@ -33,7 +33,7 @@ func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
 	}
 
 	if len(data) < int(l) {
-		return nil, common.ErrDataIsTooShort
+		return nil, common.ErrDataSize
 	}
 
 	fp := FilePath{
@@ -68,7 +68,7 @@ type LoadOption struct {
 
 func (lo *LoadOption) UnmarshalBinary(data []byte) error {
 	if len(data) < 10 {
-		return common.ErrDataIsTooShort
+		return common.ErrDataSize
 	}
 
 	lo.Attributes = binary.LittleEndian.Uint32(data[4:8])
@@ -82,7 +82,7 @@ func (lo *LoadOption) UnmarshalBinary(data []byte) error {
 	lo.Description = desc
 
 	if len(data) < offset+int(lo.FilePathListLength) {
-		return common.ErrDataIsTooShort
+		return common.ErrDataSize
 	}
 
 	err = lo.FilePathList.UnmarshalBinary(data[offset : offset+int(lo.FilePathListLength)])

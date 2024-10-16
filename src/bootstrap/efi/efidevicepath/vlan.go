@@ -14,8 +14,8 @@ type VLAN struct {
 }
 
 func (v *VLAN) UnmarshalBinary(data []byte) error {
-	if len(data) < 2 {
-		return common.ErrDataIsTooShort
+	if len(data) != 2 {
+		return common.ErrDataSize
 	}
 
 	v.Vlanid = binary.LittleEndian.Uint16(data[0:2])

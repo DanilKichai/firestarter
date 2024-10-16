@@ -22,8 +22,8 @@ type IPv4 struct {
 }
 
 func (ip *IPv4) UnmarshalBinary(data []byte) error {
-	if len(data) < 23 {
-		return common.ErrDataIsTooShort
+	if len(data) != 23 {
+		return common.ErrDataSize
 	}
 
 	ip.LocalIPAddress = netip.AddrFrom4([4]byte(data[0:4]))
@@ -38,7 +38,7 @@ func (ip *IPv4) UnmarshalBinary(data []byte) error {
 	case 0x01:
 		ip.StaticIPAddress = true
 	default:
-		return ErrInvalidBooleanRepresentation
+		return common.ErrDataRepresentation
 	}
 
 	ip.GatewayIPAddress = netip.AddrFrom4([4]byte(data[15:19]))

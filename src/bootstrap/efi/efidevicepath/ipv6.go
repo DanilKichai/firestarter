@@ -28,8 +28,8 @@ type IPv6 struct {
 }
 
 func (ip *IPv6) UnmarshalBinary(data []byte) error {
-	if len(data) < 56 {
-		return common.ErrDataIsTooShort
+	if len(data) != 56 {
+		return common.ErrDataSize
 	}
 
 	ip.LocalIPAddress = netip.AddrFrom16([16]byte(data[0:16]))
@@ -37,6 +37,13 @@ func (ip *IPv6) UnmarshalBinary(data []byte) error {
 	ip.LocalPort = binary.LittleEndian.Uint16(data[32:34])
 	ip.RemotePort = binary.LittleEndian.Uint16(data[34:36])
 	ip.Protocol = binary.LittleEndian.Uint16(data[36:38])
+
+	if origin := data[38:39][0]; origin > 0x02 {
+		return common.ErrDataRepresentation
+	} else {
+		ip.IPAddressOrigin = origin
+	}
+
 	ip.PrefixLength = uint8(data[39:40][0])
 	ip.GatewayIPAddress = netip.AddrFrom16([16]byte(data[40:56]))
 

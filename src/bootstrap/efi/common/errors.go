@@ -3,5 +3,6 @@ package common
 import "errors"
 
 var (
-	ErrDataIsTooShort = errors.New("data is too short")
+	ErrDataSize           = errors.New("data size is incorrect")
+	ErrDataRepresentation = errors.New("data representation is incorrect")
 )
