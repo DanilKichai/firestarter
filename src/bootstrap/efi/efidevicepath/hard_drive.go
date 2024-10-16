@@ -13,7 +13,7 @@ type HardDrive struct {
 	PartitionNumber    uint32
 	PartitionStart     uint64
 	PartitionSize      uint64
-	PartitionSignature []byte
+	PartitionSignature uint16
 	PartitionFormat    uint8
 	SignatureType      uint8
 }
@@ -26,7 +26,7 @@ func (hd *HardDrive) UnmarshalBinary(data []byte) error {
 	hd.PartitionNumber = binary.LittleEndian.Uint32(data[0:4])
 	hd.PartitionStart = binary.LittleEndian.Uint64(data[4:12])
 	hd.PartitionSize = binary.LittleEndian.Uint64(data[12:20])
-	hd.PartitionSignature = data[20:36]
+	hd.PartitionSignature = binary.LittleEndian.Uint16(data[20:36])
 	hd.PartitionFormat = data[36:37][0]
 	hd.SignatureType = data[37:38][0]
 	return nil
