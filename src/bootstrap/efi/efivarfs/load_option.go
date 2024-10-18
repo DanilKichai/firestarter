@@ -3,7 +3,6 @@ package efivarfs
 import (
 	"bootstrap/efi/common"
 	"encoding/binary"
-	"errors"
 	"fmt"
 )
 
@@ -16,10 +15,6 @@ type FilePath struct {
 
 type FilePathList []FilePath
 
-var (
-	ErrIncorrectFilePathLength = errors.New("got incorrect \"FilePath\" length")
-)
-
 func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
 	if len(data) < 4 {
 		return nil, common.ErrDataSize
@@ -29,7 +24,7 @@ func (fpl *FilePathList) AppendFilePathFromBinary(data []byte) ([]byte, error) {
 	l := binary.LittleEndian.Uint16(data[2:4])
 
 	if l < 4 {
-		return nil, ErrIncorrectFilePathLength
+		return nil, common.ErrFilePathLength
 	}
 
 	if len(data) < int(l) {

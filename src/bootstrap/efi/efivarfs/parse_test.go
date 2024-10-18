@@ -107,7 +107,7 @@ func TestParseVar(t *testing.T) {
 			}}[0],
 		},
 		{
-			caseName: "invalid LoadOption with empty(FilePathList)",
+			caseName: "valid LoadOption with empty(FilePathList)",
 			efivars:  "fixtures",
 			name:     "Boot1002_empty(FilePathList)",
 			guid:     GlobalVariable,
@@ -131,7 +131,7 @@ func TestParseVar(t *testing.T) {
 			efivars:     "fixtures",
 			name:        "Boot1002_short(FilePath,3)",
 			guid:        GlobalVariable,
-			expectedErr: ErrIncorrectFilePathLength,
+			expectedErr: common.ErrFilePathLength,
 		},
 		{
 			caseName:    "invalid LoadOption with too long(FilePath,out_of_range)",
