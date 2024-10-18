@@ -4,10 +4,12 @@ package efidevicepath
 
 const URIType = 3 + 24*0x100
 
-type URI string
+type URI struct {
+	Data string
+}
 
 func (u *URI) UnmarshalBinary(data []byte) error {
-	*u = URI(data)
+	u.Data = string(data)
 
 	return nil
 }

@@ -1,8 +1,8 @@
 package efivarfs
 
 import (
+	"bootstrap/efi/common"
 	"encoding/binary"
-	"fmt"
 )
 
 // https://uefi.org/specs/UEFI/2.10/03_Boot_Manager.html#globally-defined-variables
@@ -10,8 +10,8 @@ import (
 type BootCurrent uint16
 
 func (bc *BootCurrent) UnmarshalBinary(data []byte) error {
-	if len(data) < 6 {
-		return fmt.Errorf("unmarshal data is too short")
+	if len(data) != 6 {
+		return common.ErrDataSize
 	}
 
 	*bc = BootCurrent(binary.LittleEndian.Uint16(data[4:6]))

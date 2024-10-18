@@ -1,7 +1,8 @@
 package efidevicepath
 
 import (
-	"fmt"
+	"bootstrap/efi/common"
+	"net/netip"
 )
 
 // https://uefi.org/specs/UEFI/2.10/10_Protocols_Device_Path_Protocol.html#dns-device-path
@@ -9,29 +10,42 @@ import (
 const DNSType = 3 + 31*0x100
 
 type DNS struct {
-	IsIPv6    bool
-	Instances []EFIIPAddress
+	Instances []netip.Addr
 }
 
-type EFIIPAddress []byte
+type EFIIPAddress [16]byte
+
+func (eip EFIIPAddress) Addr(isIPv6 bool) netip.Addr {
+	if isIPv6 {
+		return netip.AddrFrom16(eip)
+	} else {
+		return netip.AddrFrom4([4]byte(eip[0:4]))
+	}
+}
 
 func (d *DNS) UnmarshalBinary(data []byte) error {
 	if len(data) < 1 {
-		return fmt.Errorf("unmarshal data is too short")
+		return common.ErrDataSize
 	}
 
+	var isIPv6 bool
 	switch data[0:1][0] {
 	case 0x00:
-		d.IsIPv6 = false
+		isIPv6 = false
 	case 0x01:
-		d.IsIPv6 = true
+		isIPv6 = true
 	default:
-		return fmt.Errorf("invalid boolean value representation found")
+		return common.ErrDataRepresentation
 	}
 
-	for i := 0; i < (len(data)-1)/128; i++ {
-		eia := EFIIPAddress(data[128*i+1 : 128*(i+1)+1])
-		d.Instances = append(d.Instances, eia)
+	resolvers := data[1:]
+	if len(resolvers)%16 != 0 {
+		return common.ErrDataSize
+	}
+
+	for i := 0; i < len(resolvers); i += 16 {
+		a := EFIIPAddress(resolvers[i : i+16]).Addr(isIPv6)
+		d.Instances = append(d.Instances, a)
 	}
 
 	return nil
