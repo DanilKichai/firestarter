@@ -18,7 +18,12 @@ func (v *VLAN) UnmarshalBinary(data []byte) error {
 		return common.ErrDataSize
 	}
 
-	v.Vlanid = binary.LittleEndian.Uint16(data[0:2])
+	id := binary.LittleEndian.Uint16(data[0:2])
+	if id > 4095 || id == 0 {
+		return common.ErrDataRepresentation
+	}
+
+	v.Vlanid = id
 
 	return nil
 }
