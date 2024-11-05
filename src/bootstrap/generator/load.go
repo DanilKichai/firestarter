@@ -1,7 +1,7 @@
 package generator
 
 import (
-	"bootstrap/unyaml"
+	"bootstrap/batch"
 	"bytes"
 	"fmt"
 	"html/template"
@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func Load(file string, context interface{}) (*unyaml.UnYAML, error) {
+func Load(file string, context interface{}) (*batch.Batch, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -28,11 +28,11 @@ func Load(file string, context interface{}) (*unyaml.UnYAML, error) {
 		return nil, fmt.Errorf("execute template: %w", err)
 	}
 
-	var u unyaml.UnYAML
+	var u batch.Batch
 
 	err = yaml.Unmarshal(buf.Bytes(), &u)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal YAML: %w", err)
+		return nil, fmt.Errorf("unmarshal batch: %w", err)
 	}
 
 	return &u, nil
