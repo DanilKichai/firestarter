@@ -1,8 +1,8 @@
 package generator
 
 import (
+	"bootstrap/batch"
 	"bootstrap/config"
-	"bootstrap/unyaml"
 	"os"
 	"testing"
 
@@ -14,18 +14,17 @@ func TestLoad(t *testing.T) {
 	var testCases = []struct {
 		caseName          string
 		file              string
-		expectedResult    *unyaml.UnYAML
+		expectedResult    *batch.Batch
 		expectedErr       error
 		expecterErrSubstr *string
 	}{
 		{
 			caseName: "valid template",
 			file:     "fixtures/bootstrap_valid.tmpl",
-			expectedResult: &[]unyaml.UnYAML{
+			expectedResult: &[]batch.Batch{
 				{
 					{
 						Path: "/run/systemd/network/eth0.network",
-						Type: "file",
 						Data: "[Match]\nName=eth0\n\n[Network]\nAddress=\"192.168.0.101/24\"\nGateway=\"192.168.0.1\"\n",
 					},
 				},
@@ -49,7 +48,7 @@ func TestLoad(t *testing.T) {
 		{
 			caseName:          "invalid template with errors at unmarshalling",
 			file:              "fixtures/bootstrap_invalid(unmarshalling).tmpl",
-			expecterErrSubstr: &[]string{"unmarshal YAML: "}[0],
+			expecterErrSubstr: &[]string{"unmarshal batch: "}[0],
 		},
 	}
 

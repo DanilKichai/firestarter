@@ -24,13 +24,13 @@ func main() {
 		Config: cfg,
 	}
 
-	yamlarc, err := generator.Load(*genfile, &tc)
+	batch, err := generator.Load(*genfile, &tc)
 	if err != nil {
 		log.Fatal("load generator file: %w", err)
 	}
 
-	err = yamlarc.Write("/", true, true, true)
+	err = batch.Write()
 	if err != nil {
-		log.Fatal("extract files from generated YAML archive: %w", err)
+		log.Fatal("extract files from generated batch: %w", err)
 	}
 }
