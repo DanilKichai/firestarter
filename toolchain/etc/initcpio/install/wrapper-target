@@ -6,6 +6,6 @@ build() {
 
 help() {
     cat <<HELPEOF
-This hook provides KLoader target files.
+This hook provides target files.
 HELPEOF
 }

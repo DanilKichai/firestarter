@@ -16,4 +16,5 @@ exec \
   /usr/lib/systemd/systemd \
     --log-level=err \
     --show-status=false \
-    --unit=firestarter.target
+    --unit=firestarter.target \
+    --machine-id=$(uuidgen | tr -d "-")

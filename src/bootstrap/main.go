@@ -15,22 +15,16 @@ func main() {
 
 	cfg, err := config.Load(*efivars)
 	if err != nil {
-		log.Fatal("load config from efivars: %w", err)
+		log.Fatalf("load config from efivars: %v", err)
 	}
 
-	var tc = struct {
-		Config *config.Config
-	}{
-		Config: cfg,
-	}
-
-	batch, err := generator.Load(*genfile, &tc)
+	batch, err := generator.Load(*genfile, cfg)
 	if err != nil {
-		log.Fatal("load generator file: %w", err)
+		log.Fatalf("load generator file: %v", err)
 	}
 
 	err = batch.Write()
 	if err != nil {
-		log.Fatal("extract files from generated batch: %w", err)
+		log.Fatalf("extract files from generated batch: %v", err)
 	}
 }

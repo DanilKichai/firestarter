@@ -25,72 +25,72 @@ func TestLoad(t *testing.T) {
 			caseName: "valid efivars with dynamic DHCP for IPv4 and IPv6",
 			efivars:  "fixtures/valid_dhcp",
 			expectedResult: &[]Config{{
-				MAC:  "3c:ec:ef:c4:45:80",
-				VLAN: 1,
-				IPv4: IPv4{
+				MAC:  &[]string{"3c:ec:ef:c4:45:80"}[0],
+				VLAN: &[]int{1}[0],
+				IPv4: &IPv4{
 					Static:  false,
 					Address: "0.0.0.0/0",
 					Gateway: "0.0.0.0",
 				},
-				IPv6: IPv6{
-					Static:    false,
-					ForceDHCP: false,
-					Address:   "::/0",
-					Gateway:   "::",
+				IPv6: &IPv6{
+					Static:      false,
+					SolicitDHCP: false,
+					Address:     "::/0",
+					Gateway:     "::",
 				},
 				DNS: []string{
 					"192.168.0.1",
 					"192.168.0.2",
 				},
-				URI: "http://www.google.com/",
+				URI: &[]string{"http://www.google.com/"}[0],
 			}}[0],
 		},
 		{
 			caseName: "valid efivars with dynamic DHCP for IPv4 and IPv6 (force IPv6 DHCP)",
 			efivars:  "fixtures/valid_dhcp_force6",
 			expectedResult: &[]Config{{
-				MAC:  "3c:ec:ef:c4:45:80",
-				VLAN: 1,
-				IPv4: IPv4{
+				MAC:  &[]string{"3c:ec:ef:c4:45:80"}[0],
+				VLAN: &[]int{1}[0],
+				IPv4: &IPv4{
 					Static:  false,
 					Address: "0.0.0.0/0",
 					Gateway: "0.0.0.0",
 				},
-				IPv6: IPv6{
-					Static:    false,
-					ForceDHCP: true,
-					Address:   "::/0",
-					Gateway:   "::",
+				IPv6: &IPv6{
+					Static:      false,
+					SolicitDHCP: true,
+					Address:     "::/0",
+					Gateway:     "::",
 				},
 				DNS: []string{
 					"192.168.0.1",
 					"192.168.0.2",
 				},
-				URI: "http://www.google.com/",
+				URI: &[]string{"http://www.google.com/"}[0],
 			}}[0],
 		},
 		{
 			caseName: "valid efivars with static addresses for IPv4 and IPv6",
 			efivars:  "fixtures/valid_static",
 			expectedResult: &[]Config{{
-				MAC:  "3c:ec:ef:c4:45:80",
-				VLAN: 1,
-				IPv4: IPv4{
+				MAC:  &[]string{"3c:ec:ef:c4:45:80"}[0],
+				VLAN: &[]int{1}[0],
+				IPv4: &IPv4{
 					Static:  true,
 					Address: "192.168.0.11/24",
 					Gateway: "192.168.0.254",
 				},
-				IPv6: IPv6{
-					Static:    true,
-					ForceDHCP: false,
-					Address:   "bdf9:564f:9126:fcfa:a1c8:818:d700:44f2/64",
-					Gateway:   "::",
+				IPv6: &IPv6{
+					Static:      true,
+					SolicitDHCP: false,
+					Address:     "bdf9:564f:9126:fcfa:a1c8:818:d700:44f2/64",
+					Gateway:     "::",
 				},
 				DNS: []string{
 					"192.168.0.1",
 					"192.168.0.2",
 				},
-				URI: "http://www.google.com/",
+				URI: &[]string{"http://www.google.com/"}[0],
 			}}[0],
 		},
 		{
