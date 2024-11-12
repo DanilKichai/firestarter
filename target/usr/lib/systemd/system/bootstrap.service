@@ -6,5 +6,5 @@ Before=systemd-networkd.service
 [Service]
 Type=oneshot
 Restart=no
-ExecStartPre=-/usr/bin/mkdir /run/systemd/network
+ExecStartPre=-/usr/bin/mkdir /run/firestarter /run/firestarter/bootstrap /run/systemd/network
 ExecStart=/opt/firestarter/bootstrap

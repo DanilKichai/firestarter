@@ -19,12 +19,7 @@ func (ma *MACAddress) UnmarshalBinary(data []byte) error {
 		return common.ErrDataSize
 	}
 
-	addr := data[0:6]
-	if [6]byte(addr) == [6]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00} || [6]byte(addr) == [6]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff} {
-		return common.ErrDataRepresentation
-	}
-
-	ma.MACAddress = addr
+	ma.MACAddress = data[0:6]
 	ma.IfType = data[32:33][0]
 
 	return nil

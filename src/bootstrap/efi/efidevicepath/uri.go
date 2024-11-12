@@ -16,7 +16,7 @@ type URI struct {
 func (u *URI) UnmarshalBinary(data []byte) error {
 	s := string(data)
 
-	if s == "" {
+	if len(s) == 0 {
 		return nil
 	}
 

@@ -1,80 +1,125 @@
 ---
 
-{{ if and .MAC (or .IPv4 .IPv6) }}
-{{ if .VLAN }}
+{{ with .MAC -}}
+- path: /run/firestarter/bootstrap/MAC.env
+  data: |
+    ADDRESS="{{ . }}"
+{{ end -}}
+
+{{ with .VLAN -}}
+- path: /run/firestarter/bootstrap/VLAN.env
+  data: |
+    ID="{{ . }}"
+{{ end -}}
+
+{{ with .IPv4 -}}
+- path: /run/firestarter/bootstrap/IPv4.env
+  data: |
+    STATIC="{{ if .Static }}1{{ else }}0{{ end }}"
+    ADDRESS="{{ .Address }}"
+    GATEWAY="{{ .Gateway }}"
+{{ end -}}
+
+{{ with .IPv6 -}}
+- path: /run/firestarter/bootstrap/IPv6.env
+  data: |
+    STATIC="{{ if .Static }}1{{ else }}0{{ end }}"
+    SOLICIT_DHCP="{{ if .SolicitDHCP }}1{{ else }}0{{ end }}"
+    ADDRESS="{{ .Address }}"
+    GATEWAY="{{ .Gateway }}"
+{{ end -}}
+
+{{ with .DNS -}}
+- path: /run/firestarter/bootstrap/DNS.env
+  data: |
+    RESOLVERS="{{ range . }}{{ . }} {{ end }}"
+{{ end -}}
+
+{{ with .URI -}}
+- path: /run/firestarter/bootstrap/URI.env
+  data: |
+    DATA="{{ . }}"
+{{ end -}}
+
+{{ with .PartitionSelector -}}
+- path: /run/firestarter/bootstrap/PartitionSelector.env
+  data: |
+    SELECTOR="{{ . }}"
+{{ end -}}
+
+{{ with .FilePath -}}
+- path: /run/firestarter/bootstrap/FilePath.env
+  data: |
+    PATH="{{ . }}"
+{{ end -}}
+
+{{ if and .MAC (or .IPv4 .IPv6) -}}
+{{ if .VLAN -}}
 - path: /run/systemd/network/10-bootif.network
   data: |
     [Match]
     MACAddress={{ .MAC }}
 
     [Network]
-    VLAN={{ printf "vlan%d" .VLAN }}
+    VLAN=vlan{{ .VLAN }}
     IPv6AcceptRA=no
 
 - path: /run/systemd/network/20-bootvlan.netdev
   data: |
     [NetDev]
-    Name={{ printf "vlan%d" .VLAN }}
+    Name=vlan{{ .VLAN }}
     Kind=vlan
 
     [VLAN]
     Id={{ .VLAN }}
-{{ end }}
+{{ end -}}
 
 - path: /run/systemd/network/30-{{ if .VLAN }}bootvlan{{ else }}bootif{{ end }}.network
   data: |
     [Match]
-    {{ if .VLAN }}Name={{ printf "vlan%d" .VLAN }}{{ else }}MACAddress={{ .MAC }}{{ end }}
+    {{ if .VLAN -}}
+    Name=vlan{{ .VLAN }}
+    {{- else -}}
+    MACAddress={{ .MAC }}
+    {{- end }}
 
     [Network]
     DHCP=
-{{- $dhcp4 := false }}
-{{- if and .IPv4 (not .IPv4.Static) }}
-{{- $dhcp4 = true }}
-{{- end }}
-
-{{- $dhcp6 := false }}
-{{- if and .IPv6 (not .IPv6.Static) }}
-{{- $dhcp6 = true }}
-{{- end }}
-
-{{- if and (    $dhcp4) (    $dhcp6) }}yes {{- end }}
-{{- if and (    $dhcp4) (not $dhcp6) }}ipv4{{- end }}
-{{- if and (not $dhcp4) (    $dhcp6) }}ipv6{{- end }}
-{{- if and (not $dhcp4) (not $dhcp6) }}no  {{- end }}
-
-{{- with .IPv4 }}{{ if .Static }}
+    {{- $dhcp4 := and .IPv4 (not .IPv4.Static) }}
+    {{- $dhcp6 := and .IPv6 (not .IPv6.Static) }}
+    {{- if and (    $dhcp4) (    $dhcp6) }}yes {{- end }}
+    {{- if and (    $dhcp4) (not $dhcp6) }}ipv4{{- end }}
+    {{- if and (not $dhcp4) (    $dhcp6) }}ipv6{{- end }}
+    {{- if and (not $dhcp4) (not $dhcp6) }}no  {{- end }}
+    {{ with .IPv4 }}{{ if .Static -}}
     Address={{ .Address }}
     Gateway={{ .Gateway }}
-{{ end }}{{ end }}
-
-{{- with .IPv6 }}{{ if .Static }}
+    {{ end }}{{ end -}}
+    {{ with .IPv6 }}{{ if .Static -}}
     Address={{ .Address }}
     Gateway={{ .Gateway }}
-{{ end }}{{ end }}
-
-{{- if or (not .IPv6) .IPv6.SolicitDHCP }}
+    {{ end }}{{ end -}}
+    {{ if or (not .IPv6) .IPv6.SolicitDHCP -}}
     IPv6AcceptRA=no
-{{ end }}
-
-{{- range .DNS }}
+    {{ end -}}
+    {{ range .DNS -}}
     DNS={{ . }}
-{{ end }}
+    {{ end -}}
 
-{{- with .IPv4 }}
+    {{ with .IPv4 }}
     [DHCPv4]
     ClientIdentifier=mac
     UseHostname=no
     RequestOptions=67
     VendorClassIdentifier=HTTPClient:Arch:00016
-{{ end }}
+    {{ end -}}
 
-{{- with .IPv6 }}
+    {{ with .IPv6 }}
     [DHCPv6]
     ClientIdentifier=mac
     UseHostname=no
     RequestOptions=67
     VendorClassIdentifier=HTTPClient:Arch:00016
-    {{ if .SolicitDHCP }}WithoutRA=solicit{{ end }}
-{{ end }}
-{{ end }}
+    WithoutRA={{ if .SolicitDHCP }}solicit{{ else }}no{{ end }}
+    {{ end -}}
+{{ end -}}
