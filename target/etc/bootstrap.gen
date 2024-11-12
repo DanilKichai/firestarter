@@ -1,0 +1,80 @@
+---
+
+{{ if and .MAC (or .IPv4 .IPv6) }}
+{{ if .VLAN }}
+- path: /run/systemd/network/10-bootif.network
+  data: |
+    [Match]
+    MACAddress={{ .MAC }}
+
+    [Network]
+    VLAN={{ printf "vlan%d" .VLAN }}
+    IPv6AcceptRA=no
+
+- path: /run/systemd/network/20-bootvlan.netdev
+  data: |
+    [NetDev]
+    Name={{ printf "vlan%d" .VLAN }}
+    Kind=vlan
+
+    [VLAN]
+    Id={{ .VLAN }}
+{{ end }}
+
+- path: /run/systemd/network/30-{{ if .VLAN }}bootvlan{{ else }}bootif{{ end }}.network
+  data: |
+    [Match]
+    {{ if .VLAN }}Name={{ printf "vlan%d" .VLAN }}{{ else }}MACAddress={{ .MAC }}{{ end }}
+
+    [Network]
+    DHCP=
+{{- $dhcp4 := false }}
+{{- if and .IPv4 (not .IPv4.Static) }}
+{{- $dhcp4 = true }}
+{{- end }}
+
+{{- $dhcp6 := false }}
+{{- if and .IPv6 (not .IPv6.Static) }}
+{{- $dhcp6 = true }}
+{{- end }}
+
+{{- if and (    $dhcp4) (    $dhcp6) }}yes {{- end }}
+{{- if and (    $dhcp4) (not $dhcp6) }}ipv4{{- end }}
+{{- if and (not $dhcp4) (    $dhcp6) }}ipv6{{- end }}
+{{- if and (not $dhcp4) (not $dhcp6) }}no  {{- end }}
+
+{{- with .IPv4 }}{{ if .Static }}
+    Address={{ .Address }}
+    Gateway={{ .Gateway }}
+{{ end }}{{ end }}
+
+{{- with .IPv6 }}{{ if .Static }}
+    Address={{ .Address }}
+    Gateway={{ .Gateway }}
+{{ end }}{{ end }}
+
+{{- if or (not .IPv6) .IPv6.SolicitDHCP }}
+    IPv6AcceptRA=no
+{{ end }}
+
+{{- range .DNS }}
+    DNS={{ . }}
+{{ end }}
+
+{{- with .IPv4 }}
+    [DHCPv4]
+    ClientIdentifier=mac
+    UseHostname=no
+    RequestOptions=67
+    VendorClassIdentifier=HTTPClient:Arch:00016
+{{ end }}
+
+{{- with .IPv6 }}
+    [DHCPv6]
+    ClientIdentifier=mac
+    UseHostname=no
+    RequestOptions=67
+    VendorClassIdentifier=HTTPClient:Arch:00016
+    {{ if .SolicitDHCP }}WithoutRA=solicit{{ end }}
+{{ end }}
+{{ end }}

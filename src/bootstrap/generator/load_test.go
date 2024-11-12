@@ -25,7 +25,7 @@ func TestLoad(t *testing.T) {
 				{
 					{
 						Path: "/run/systemd/network/eth0.network",
-						Data: "[Match]\nName=eth0\n\n[Network]\nAddress=\"192.168.0.101/24\"\nGateway=\"192.168.0.1\"\n",
+						Data: "[Match]\nName=eth0\n\n[Network]\nAddress=192.168.0.101/24\nGateway=192.168.0.1\n",
 					},
 				},
 			}[0],
@@ -54,23 +54,19 @@ func TestLoad(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.caseName, func(t *testing.T) {
-			var tc = struct {
-				Config *config.Config
-			}{
-				Config: &[]config.Config{
-					{
-						IPv4: config.IPv4{
-							Address: "192.168.0.101/24",
-							Gateway: "192.168.0.1",
-						},
-						DNS: []string{
-							"192.168.0.1",
-						},
+			cfg := &[]config.Config{
+				{
+					IPv4: &config.IPv4{
+						Address: "192.168.0.101/24",
+						Gateway: "192.168.0.1",
 					},
-				}[0],
-			}
+					DNS: []string{
+						"192.168.0.1",
+					},
+				},
+			}[0]
 
-			gen, err := Load(testCase.file, tc)
+			gen, err := Load(testCase.file, cfg)
 
 			if testCase.expectedErr != nil || testCase.expecterErrSubstr != nil {
 				require.Error(t, err)

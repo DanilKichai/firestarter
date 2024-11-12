@@ -16,6 +16,10 @@ type URI struct {
 func (u *URI) UnmarshalBinary(data []byte) error {
 	s := string(data)
 
+	if s == "" {
+		return nil
+	}
+
 	_, err := url.ParseRequestURI(s)
 	if err != nil {
 		return common.ErrDataRepresentation
