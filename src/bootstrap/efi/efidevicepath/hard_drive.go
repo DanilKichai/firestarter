@@ -9,6 +9,23 @@ import (
 
 const HardDriveType = 4 + 1*0x100
 
+const (
+	HardDriveNoDiskSignatureType = 0x00
+	HardDriveMBRSignatureType    = 0x01
+	HardDriveGUIDSignatureType   = 0x02
+)
+
+const (
+	HardDriveMBRPartitionFormat  = 0x01
+	HardDriveGUIDPartitionFormat = 0x01
+)
+
+const (
+	HardDriveNoDiskSignature = 0x00
+	HardDriveMBRSignature    = 0x01
+	HardDriveGUIDSignature   = 0x02
+)
+
 type HardDrive struct {
 	PartitionNumber    uint32
 	PartitionStart     uint64

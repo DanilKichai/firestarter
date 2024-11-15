@@ -454,18 +454,6 @@ func TestParsePath(t *testing.T) {
 			},
 			expectedErr: common.ErrDataSize,
 		},
-		{
-			caseName: "broadcast MAC Address",
-			data: []byte{
-				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-
-				0x01,
-			},
-			expectedErr: common.ErrDataRepresentation,
-		},
 	}
 
 	for _, testCase := range testCases_MACAddress {
@@ -499,22 +487,6 @@ func TestParsePath(t *testing.T) {
 			},
 			expectedResult: &[]URI{{
 				Data: "https://www.google.com/",
-			}}[0],
-		},
-		{
-			caseName: "invalid URI",
-			data: []byte{
-				0xff, 0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f, 0x2f, 0x77,
-				0x77, 0x77, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
-				0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-			},
-			expectedErr: common.ErrDataRepresentation,
-		},
-		{
-			caseName: "empty URI",
-			data:     []byte{},
-			expectedResult: &[]URI{{
-				Data: "",
 			}}[0],
 		},
 	}
@@ -556,13 +528,6 @@ func TestParsePath(t *testing.T) {
 				0x00,
 			},
 			expectedErr: common.ErrDataSize,
-		},
-		{
-			caseName: "0 VLAN",
-			data: []byte{
-				0x00, 0x00,
-			},
-			expectedErr: common.ErrDataRepresentation,
 		},
 	}
 

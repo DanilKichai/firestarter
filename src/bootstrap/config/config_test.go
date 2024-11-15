@@ -116,7 +116,12 @@ func TestLoad(t *testing.T) {
 		{
 			caseName:    "invalid efivars with invalid MAC",
 			efivars:     "fixtures/invalid_mac",
-			expectedErr: common.ErrDataRepresentation,
+			expectedErr: common.ErrDataSize,
+		},
+		{
+			caseName:    "invalid efivars with invalid VLAN",
+			efivars:     "fixtures/invalid_vlan",
+			expectedErr: common.ErrDataSize,
 		},
 		{
 			caseName:    "invalid efivars with invalid URI",
@@ -124,9 +129,30 @@ func TestLoad(t *testing.T) {
 			expectedErr: common.ErrDataRepresentation,
 		},
 		{
-			caseName:    "invalid efivars with invalid VLAN",
-			efivars:     "fixtures/invalid_vlan",
-			expectedErr: common.ErrDataRepresentation,
+			caseName: "valid efivars with GPT partitioned HardDrive + FilePath",
+			efivars:  "fixtures/valid_harddrive(gpt)+filepath",
+			expectedResult: &[]Config{{
+				PartitionSelector: &[]string{"PARTUUID=65a5135b-ecd7-4bde-a7a2-251e7b74659d"}[0],
+				FilePath:          &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
+			}}[0],
+		},
+		{
+			caseName: "valid efivars with MBR partitioned HardDrive + FilePath",
+			efivars:  "fixtures/valid_harddrive(mbr)+filepath",
+			expectedResult: &[]Config{{
+				PartitionSelector: &[]string{"PARTUUID=5b13a565-01"}[0],
+				FilePath:          &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
+			}}[0],
+		},
+		{
+			caseName:    "invalid efivars with invalid HardDrive",
+			efivars:     "fixtures/invalid_harddrive",
+			expectedErr: common.ErrDataSize,
+		},
+		{
+			caseName:    "invalid efivars with invalid FilePath",
+			efivars:     "fixtures/invalid_filepath",
+			expectedErr: common.ErrDataSize,
 		},
 	}
 

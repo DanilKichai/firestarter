@@ -5,6 +5,7 @@ import (
 	"bootstrap/efi/efivarfs"
 	"fmt"
 	"net"
+	"slices"
 )
 
 type IPv4 struct {
@@ -21,12 +22,14 @@ type IPv6 struct {
 }
 
 type Config struct {
-	MAC  *string
-	VLAN *int
-	IPv4 *IPv4
-	IPv6 *IPv6
-	DNS  []string
-	URI  *string
+	MAC               *string
+	VLAN              *int
+	IPv4              *IPv4
+	IPv6              *IPv6
+	DNS               []string
+	URI               *string
+	PartitionSelector *string
+	FilePath          *string
 }
 
 func Load(efivars string) (*Config, error) {
@@ -50,8 +53,7 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse MAC from current load option: %w", err)
 			}
 
-			m := mac.MACAddress.String()
-			cfg.MAC = &m
+			cfg.MAC = &[]string{mac.MACAddress.String()}[0]
 
 		case efidevicepath.VLANType:
 			vlan, err := efidevicepath.ParsePath[*efidevicepath.VLAN](fp.Data)
@@ -59,8 +61,7 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse VLAN from current load option: %w", err)
 			}
 
-			v := int(vlan.Vlanid)
-			cfg.VLAN = &v
+			cfg.VLAN = &[]int{int(vlan.Vlanid)}[0]
 
 		case efidevicepath.IPv4Type:
 			ipv4, err := efidevicepath.ParsePath[*efidevicepath.IPv4](fp.Data)
@@ -119,10 +120,54 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse URI from current load option: %w", err)
 			}
 
-			u := uri.Data
-			cfg.URI = &u
-		}
+			cfg.URI = &[]string{uri.Data}[0]
 
+		case efidevicepath.HardDriveType:
+			hd, err := efidevicepath.ParsePath[*efidevicepath.HardDrive](fp.Data)
+			if err != nil {
+				return nil, fmt.Errorf("parse HardDrive from current load option: %w", err)
+			}
+
+			var selector string
+
+			if hd.SignatureType == efidevicepath.HardDriveMBRSignature {
+				selector =
+					fmt.Sprintf(
+						"PARTUUID=%08x-%02d",
+						hd.PartitionSignature[0:4],
+						hd.PartitionNumber,
+					)
+			}
+
+			if hd.SignatureType == efidevicepath.HardDriveGUIDSignature {
+				s1 := hd.PartitionSignature[0:4]
+				s2 := hd.PartitionSignature[4:6]
+				s3 := hd.PartitionSignature[6:8]
+
+				slices.Reverse(s1)
+				slices.Reverse(s2)
+				slices.Reverse(s3)
+
+				selector = fmt.Sprintf(
+					"PARTUUID=%04x-%02x-%02x-%02x-%06x",
+					s1,
+					s2,
+					s3,
+					hd.PartitionSignature[8:10],
+					hd.PartitionSignature[10:16],
+				)
+			}
+
+			cfg.PartitionSelector = &selector
+
+		case efidevicepath.FilePathType:
+			file, err := efidevicepath.ParsePath[*efidevicepath.FilePath](fp.Data)
+			if err != nil {
+				return nil, fmt.Errorf("parse FilePath from current load option: %w", err)
+			}
+
+			cfg.FilePath = &[]string{file.PathName}[0]
+		}
 	}
 
 	return &cfg, nil
