@@ -489,6 +489,22 @@ func TestParsePath(t *testing.T) {
 				Data: "https://www.google.com/",
 			}}[0],
 		},
+		{
+			caseName: "empty URI",
+			data:     []byte{},
+			expectedResult: &[]URI{{
+				Data: "",
+			}}[0],
+		},
+		{
+			caseName: "invalid URI",
+			data: []byte{
+				0x68, 0x74, 0x74, 0x70, 0x73, 0x2f, 0x2f, 0x2f, 0x77,
+				0x77, 0x77, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+				0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+			},
+			expectedErr: common.ErrDataRepresentation,
+		},
 	}
 
 	for _, testCase := range testCases_URI {

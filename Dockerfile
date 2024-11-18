@@ -47,7 +47,6 @@ FROM --platform=linux/amd64 archlinux:base as wrapper
       core/iproute2 \
       core/iputils \
       core/less \
-      core/links \
       core/lvm2 \
       core/nano \
       core/sed \
@@ -55,12 +54,9 @@ FROM --platform=linux/amd64 archlinux:base as wrapper
       core/systemd \
       core/udev \
       core/util-linux \
-      extra/clevis \
       extra/kexec-tools \
       extra/qrencode \
-      extra/sbsigntools \
-      extra/tcpdump \
-      extra/tpm2-tools
+      extra/tcpdump
   ADD target/ /target/
 
   COPY --from=builder /opt/firestarter/bootstrap /target/opt/firestarter/
