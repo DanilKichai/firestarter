@@ -132,16 +132,16 @@ func TestLoad(t *testing.T) {
 			caseName: "valid efivars with GPT partitioned HardDrive + FilePath",
 			efivars:  "fixtures/valid_harddrive(gpt)+filepath",
 			expectedResult: &[]Config{{
-				PartitionSelector: &[]string{"PARTUUID=65a5135b-ecd7-4bde-a7a2-251e7b74659d"}[0],
-				FilePath:          &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
+				PartitionUUID: &[]string{"65a5135b-ecd7-4bde-a7a2-251e7b74659d"}[0],
+				FilePath:      &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
 			}}[0],
 		},
 		{
 			caseName: "valid efivars with MBR partitioned HardDrive + FilePath",
 			efivars:  "fixtures/valid_harddrive(mbr)+filepath",
 			expectedResult: &[]Config{{
-				PartitionSelector: &[]string{"PARTUUID=5b13a565-01"}[0],
-				FilePath:          &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
+				PartitionUUID: &[]string{"65a5135b-01"}[0],
+				FilePath:      &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
 			}}[0],
 		},
 		{

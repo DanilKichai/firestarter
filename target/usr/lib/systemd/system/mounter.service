@@ -1,0 +1,11 @@
+[Unit]
+Description=Firestarter Mounter
+After=sysinit.target bootstrap.service
+ConditionPathExists=/run/firestarter/bootstrap/PartitionUUID.env
+
+[Service]
+Type=oneshot
+Restart=no
+ExecStartPre=/usr/bin/mkdir -p /efi
+ExecStart=/opt/firestarter/mounter
+EnvironmentFile=/run/firestarter/bootstrap/PartitionUUID.env
