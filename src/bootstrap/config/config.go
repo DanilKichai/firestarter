@@ -131,10 +131,13 @@ func Load(efivars string) (*Config, error) {
 			var selector string
 
 			if hd.SignatureType == efidevicepath.HardDriveMBRSignature {
+				s := hd.PartitionSignature[0:4]
+				slices.Reverse(s)
+
 				selector =
 					fmt.Sprintf(
 						"PARTUUID=%08x-%02d",
-						hd.PartitionSignature[0:4],
+						s,
 						hd.PartitionNumber,
 					)
 			}
