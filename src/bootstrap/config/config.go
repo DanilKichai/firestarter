@@ -22,14 +22,14 @@ type IPv6 struct {
 }
 
 type Config struct {
-	MAC               *string
-	VLAN              *int
-	IPv4              *IPv4
-	IPv6              *IPv6
-	DNS               []string
-	URI               *string
-	PartitionSelector *string
-	FilePath          *string
+	MAC           *string
+	VLAN          *int
+	IPv4          *IPv4
+	IPv6          *IPv6
+	DNS           []string
+	URI           *string
+	PartitionUUID *string
+	FilePath      *string
 }
 
 func Load(efivars string) (*Config, error) {
@@ -128,15 +128,15 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse HardDrive from current load option: %w", err)
 			}
 
-			var selector string
+			var partuuid string
 
 			if hd.SignatureType == efidevicepath.HardDriveMBRSignature {
 				s := hd.PartitionSignature[0:4]
 				slices.Reverse(s)
 
-				selector =
+				partuuid =
 					fmt.Sprintf(
-						"PARTUUID=%08x-%02d",
+						"%08x-%02d",
 						s,
 						hd.PartitionNumber,
 					)
@@ -151,8 +151,8 @@ func Load(efivars string) (*Config, error) {
 				slices.Reverse(s2)
 				slices.Reverse(s3)
 
-				selector = fmt.Sprintf(
-					"PARTUUID=%04x-%02x-%02x-%02x-%06x",
+				partuuid = fmt.Sprintf(
+					"%04x-%02x-%02x-%02x-%06x",
 					s1,
 					s2,
 					s3,
@@ -161,7 +161,7 @@ func Load(efivars string) (*Config, error) {
 				)
 			}
 
-			cfg.PartitionSelector = &selector
+			cfg.PartitionUUID = &partuuid
 
 		case efidevicepath.FilePathType:
 			file, err := efidevicepath.ParsePath[*efidevicepath.FilePath](fp.Data)

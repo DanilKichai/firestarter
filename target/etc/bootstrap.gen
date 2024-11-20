@@ -41,10 +41,10 @@
     DATA="{{ . }}"
 {{ end -}}
 
-{{ with .PartitionSelector -}}
-- path: /run/firestarter/bootstrap/PartitionSelector.env
+{{ with .PartitionUUID -}}
+- path: /run/firestarter/bootstrap/PartitionUUID.env
   data: |
-    SELECTOR="{{ . }}"
+    PARTUUID="{{ . }}"
 {{ end -}}
 
 {{ with .FilePath -}}

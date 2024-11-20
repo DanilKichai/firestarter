@@ -1,6 +1,6 @@
 
 [Unit]
-Description=Firestarter
+Description=Preparation for Firestarter
 Requires=basic.target
 After=basic.target
 AllowIsolate=yes

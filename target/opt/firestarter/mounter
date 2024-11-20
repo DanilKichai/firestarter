@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+if [ -z "${PARTUUID}" ]; then
+    echo "PARTUUID environment variable does not set!"
+    exit 1
+fi
+
+PARTITION="/dev/disk/by-partuuid/${PARTUUID}"
+udevadm wait "${PARTITION}"
+mount "${PARTITION}" /efi
