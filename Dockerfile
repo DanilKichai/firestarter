@@ -7,7 +7,7 @@ FROM --platform=linux/amd64 golang:latest as builder
       go build \
         -C /usr/src/bootstrap \
         -ldflags='-extldflags=-static' \
-        -o /opt/firestarter/bootstrap \
+        -o /usr/local/bin/bootstrap \
         .
 
 FROM --platform=linux/amd64 archlinux:base as wrapper
@@ -59,7 +59,7 @@ FROM --platform=linux/amd64 archlinux:base as wrapper
       extra/tcpdump
   ADD target/ /target/
 
-  COPY --from=builder /opt/firestarter/bootstrap /target/opt/firestarter/
+  COPY --from=builder /usr/local/bin/bootstrap /target/usr/local/bin/
   RUN echo -e "debug\ndebug" | passwd --root /target
 
   RUN mkinitcpio --preset wrapper

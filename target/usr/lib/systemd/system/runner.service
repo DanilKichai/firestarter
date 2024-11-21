@@ -1,7 +1,7 @@
 [Unit]
-Description=Firestarter Runner
-Requires=firestarter-pre.target network-online.target
-After=firestarter-pre.target network-online.target
+Description=Runner
+Requires=runner-pre.target network-online.target
+After=runner-pre.target network-online.target
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
 
@@ -9,7 +9,7 @@ ConditionPathExists=/dev/tty0
 Type=idle
 Environment=TERM=linux HOME=/root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStartPre=/usr/bin/mkdir -p /root
-ExecStart=/opt/firestarter/runner
+ExecStart=/usr/local/bin/runner
 Restart=no
 StandardInput=tty
 StandardOutput=tty

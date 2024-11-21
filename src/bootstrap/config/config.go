@@ -120,7 +120,13 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse URI from current load option: %w", err)
 			}
 
-			cfg.URI = &[]string{uri.Data}[0]
+			s := string(uri.Data)
+
+			if len(s) == 0 {
+				break
+			}
+
+			cfg.URI = &s
 
 		case efidevicepath.HardDriveType:
 			hd, err := efidevicepath.ParsePath[*efidevicepath.HardDrive](fp.Data)
@@ -159,6 +165,10 @@ func Load(efivars string) (*Config, error) {
 					hd.PartitionSignature[8:10],
 					hd.PartitionSignature[10:16],
 				)
+			}
+
+			if len(partuuid) == 0 {
+				break
 			}
 
 			cfg.PartitionUUID = &partuuid
