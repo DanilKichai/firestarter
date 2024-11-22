@@ -124,6 +124,29 @@ func TestLoad(t *testing.T) {
 			expectedErr: common.ErrDataSize,
 		},
 		{
+			caseName: "valid efivars with empty URI",
+			efivars:  "fixtures/empty_uri",
+			expectedResult: &[]Config{{
+				MAC:  &[]string{"3c:ec:ef:c4:45:80"}[0],
+				VLAN: &[]int{1}[0],
+				IPv4: &IPv4{
+					Static:  false,
+					Address: "0.0.0.0/0",
+					Gateway: "0.0.0.0",
+				},
+				IPv6: &IPv6{
+					Static:      false,
+					SolicitDHCP: false,
+					Address:     "::/0",
+					Gateway:     "::",
+				},
+				DNS: []string{
+					"192.168.0.1",
+					"192.168.0.2",
+				},
+			}}[0],
+		},
+		{
 			caseName:    "invalid efivars with invalid URI",
 			efivars:     "fixtures/invalid_uri",
 			expectedErr: common.ErrDataRepresentation,
@@ -142,6 +165,13 @@ func TestLoad(t *testing.T) {
 			expectedResult: &[]Config{{
 				PartitionUUID: &[]string{"65a5135b-01"}[0],
 				FilePath:      &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
+			}}[0],
+		},
+		{
+			caseName: "valid efivars with unsupported HardDrive Signature + FilePath",
+			efivars:  "fixtures/unsupported_harddrive(signature)+filepath",
+			expectedResult: &[]Config{{
+				FilePath: &[]string{`EFI\Linux\arch-linux-lts.efi`}[0],
 			}}[0],
 		},
 		{

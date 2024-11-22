@@ -12,9 +12,22 @@ echo
 echo "${HOME_URL}"
 echo
 
+if ! mount -t efivarfs efivars /bootstrap/efivars; then
+  echo "Mount efivarfs for bootstrap failed!"
+  exit 1
+fi
+
+if ! bootstrap \
+  --efivars /bootstrap/efivars \
+  --generator /bootstrap/generator.tmpl
+then
+  echo "Bootstrap failed!"
+  exit 1
+fi
+
 exec \
   /usr/lib/systemd/systemd \
     --log-level=err \
     --show-status=false \
-    --unit=firestarter.service \
+    --unit=runner.service \
     --machine-id=$(uuidgen | tr -d "-")
