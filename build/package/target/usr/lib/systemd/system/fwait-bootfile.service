@@ -1,0 +1,10 @@
+[Unit]
+Description=Wait for bootfile
+Before=inspector.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+Restart=no
+EnvironmentFile=/etc/default/inspector
+ExecStart=/usr/bin/fwait --file ${BOOTFILE_NAME}

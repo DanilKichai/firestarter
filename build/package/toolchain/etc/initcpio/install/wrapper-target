@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+build() {
+    command cp --recursive /target/* "${BUILDROOT}"
+    command mkdir --parents "${BUILDROOT}/efivars"
+}
+
+help() {
+    cat <<HELPEOF
+This hook provides target files.
+HELPEOF
+}
