@@ -1,0 +1,6 @@
+### Vietnam
+Server = http://mirror.bizflycloud.vn/archlinux/$repo/os/$arch
+Server = https://mirrors.huongnguyen.dev/arch/$repo/os/$arch
+Server = https://mirrors.nguyenhoang.cloud/archlinux/$repo/os/$arch
+Server = http://mirrors.twilight.fyi/archlinux/$repo/os/$arch
+Server = https://mirrors.twilight.fyi/archlinux/$repo/os/$arch
