@@ -11,6 +11,7 @@ firestarter.efi: builder
 	docker buildx build \
 		--builder firestarter \
 		--progress plain \
+		--file build/package/Dockerfile \
 		--target target \
 		--output "type=local,dest=." \
 		.
