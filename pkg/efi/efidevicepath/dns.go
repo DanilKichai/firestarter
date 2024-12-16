@@ -10,6 +10,7 @@ import (
 const DNSType = 3 + 31*0x100
 
 type DNS struct {
+	IsIPv6    bool
 	Instances []netip.Addr
 }
 
@@ -28,12 +29,11 @@ func (d *DNS) UnmarshalBinary(data []byte) error {
 		return common.ErrDataSize
 	}
 
-	var isIPv6 bool
 	switch data[0:1][0] {
 	case 0x00:
-		isIPv6 = false
+		d.IsIPv6 = false
 	case 0x01:
-		isIPv6 = true
+		d.IsIPv6 = true
 	default:
 		return common.ErrDataRepresentation
 	}
@@ -44,7 +44,7 @@ func (d *DNS) UnmarshalBinary(data []byte) error {
 	}
 
 	for i := 0; i < len(resolvers); i += 16 {
-		a := EFIIPAddress(resolvers[i : i+16]).Addr(isIPv6)
+		a := EFIIPAddress(resolvers[i : i+16]).Addr(d.IsIPv6)
 		d.Instances = append(d.Instances, a)
 	}
 

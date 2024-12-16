@@ -32,6 +32,7 @@ func TestParsePath(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00,
 			},
 			expectedResult: &[]DNS{{
+				IsIPv6: false,
 				Instances: []netip.Addr{
 					netip.AddrFrom4([4]byte{192, 168, 0, 1}),
 					netip.AddrFrom4([4]byte{192, 168, 0, 2}),
@@ -54,6 +55,7 @@ func TestParsePath(t *testing.T) {
 				0xee, 0xfb, 0xa5, 0x02,
 			},
 			expectedResult: &[]DNS{{
+				IsIPv6: true,
 				Instances: []netip.Addr{
 					netip.AddrFrom16([16]byte{
 						0x66, 0x0a, 0xde, 0x97,

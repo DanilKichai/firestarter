@@ -14,14 +14,14 @@ echo
 
 if ! mount -t efivarfs efivars /efivars; then
   echo "Mount efivarfs failed!"
-  exit 1
+  sleep infinity
 fi
 
 if ! bootstrap \
   --efivars /efivars
 then
   echo "Bootstrap failed!"
-  exit 1
+  sleep infinity
 fi
 
 exec \

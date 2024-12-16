@@ -13,7 +13,7 @@ const IPv6Type = 3 + 13*0x100
 const (
 	IPv6ManualOrigin        = 0x00
 	IPv6StatelessAutoOrigin = 0x01
-	IPv6StatefullAutoOrigin = 0x02
+	IPv6StatefulAutoOrigin  = 0x02
 )
 
 type IPv6 struct {
