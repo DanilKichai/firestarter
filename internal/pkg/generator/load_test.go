@@ -25,6 +25,7 @@ func TestLoad(t *testing.T) {
 				{
 					{
 						Path: "/run/systemd/network/eth0.network",
+						Type: "file",
 						Data: "[Match]\nName=eth0\n\n[Network]\nAddress=192.168.0.101/24\nGateway=192.168.0.1\n",
 					},
 				},
@@ -43,7 +44,7 @@ func TestLoad(t *testing.T) {
 		{
 			caseName:          "invalid template with errors at parsing",
 			file:              "fixtures/bootstrap_invalid(parsing).tmpl",
-			expecterErrSubstr: &[]string{"parse template: "}[0],
+			expecterErrSubstr: &[]string{"construct template: "}[0],
 		},
 		{
 			caseName:          "invalid template with errors at unmarshalling",
@@ -59,14 +60,14 @@ func TestLoad(t *testing.T) {
 					IPv4: &config.IPv4{
 						Address: "192.168.0.101/24",
 						Gateway: "192.168.0.1",
-					},
-					DNS: []string{
-						"192.168.0.1",
+						DNS: []string{
+							"192.168.0.1",
+						},
 					},
 				},
 			}[0]
 
-			gen, err := Load(testCase.file, cfg)
+			gen, err := Load(testCase.file, cfg, true)
 
 			if testCase.expectedErr != nil || testCase.expecterErrSubstr != nil {
 				require.Error(t, err)

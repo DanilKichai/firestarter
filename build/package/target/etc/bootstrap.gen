@@ -1,62 +1,54 @@
 ---
 
-{{ with .URI -}}
-- path: /etc/URI.env
+{{- $URI := "" }}
+
+{{- if .URI }}
+{{- $URI = .URI }}
+{{- end }}
+
+{{- if and (not $URI) (and .PartitionUUID .FilePath) }}
+{{- $URI = path2uri "/efi" .FilePath }}
+{{- end }}
+
+{{- with $URI }}
+- path: /etc/boot.uri
   type: file
   data: |
-    DATA="{{ . }}"
-{{ end -}}
+    {{ . }}
+{{- end }}
 
-{{ with .FilePath -}}
-- path: /etc/FilePath.env
-  type: file
-  data: |
-    PATH="{{ . }}"
-{{ end -}}
-
-{{ with .PartitionUUID -}}
+{{- with .PartitionUUID }}
 - path: /etc/systemd/system/runner-pre.target.wants
   type: rdirectory
-
 - path: /etc/systemd/system/runner-pre.target.wants/local-fs.target
   type: symlink
   data: /usr/lib/systemd/system/local-fs.target
-
 - path: /efi
   type: rdirectory
-
 - path: /etc/fstab
   type: file
   data: |
-    PARTUUID={{ . }}	/efi		vfat		umask=0077,rw	0 0
-{{ end -}}
-
-{{ if and .MAC (or .IPv4 .IPv6) -}}
+    PARTUUID={{ . }} /efi vfat umask=0077,rw 0 0
+{{- end }}
+{{- if and .MAC (or .IPv4 .IPv6) }}
 - path: /etc/systemd/system/network-online.target.wants
   type: rdirectory
-
 - path: /etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service
   type: symlink
   data: /usr/lib/systemd/system/systemd-networkd-wait-online.service
-
 - path: /etc/systemd/system/runner-pre.target.wants
   type: rdirectory
-
 - path: /etc/systemd/system/runner-pre.target.wants/systemd-networkd.service
   type: symlink
   data: /usr/lib/systemd/system/systemd-networkd.service
-
 - path: /etc/systemd/system/runner-pre.target.wants/systemd-resolved.service
   type: symlink
   data: /usr/lib/systemd/system/systemd-resolved.service
-
 - path: /etc/systemd/system/runner-pre.target.wants/network-online.target
   type: symlink
   data: /usr/lib/systemd/system/network-online.target
-
 - path: /etc/systemd/network
   type: rdirectory
-
 - path: /etc/systemd/network/00-bootif.link
   type: file
   data: |
@@ -65,8 +57,7 @@
 
     [Link]
     Name=bootif
-
-{{ if .VLAN -}}
+{{- if .VLAN }}
 - path: /etc/systemd/network/10-bootif.network
   type: file
   data: |
@@ -76,7 +67,6 @@
     [Network]
     VLAN=bootvlan
     IPv6AcceptRA=no
-
 - path: /etc/systemd/network/20-bootvlan.netdev
   type: file
   data: |
@@ -86,8 +76,7 @@
 
     [VLAN]
     Id={{ .VLAN }}
-{{ end -}}
-
+{{- end }}
 - path: /etc/systemd/network/30-{{ if .VLAN }}bootvlan{{ else }}bootif{{ end }}.network
   type: file
   data: |
@@ -102,35 +91,56 @@
     {{- if and (    $dhcp4) (not $dhcp6) }}ipv4{{- end }}
     {{- if and (not $dhcp4) (    $dhcp6) }}ipv6{{- end }}
     {{- if and (not $dhcp4) (not $dhcp6) }}no  {{- end }}
-    {{ with .IPv4 }}{{ if .Static -}}
+    {{- with .IPv4 }}{{ if .Static }}
     Address={{ .Address }}
     Gateway={{ .Gateway }}
-    {{ end }}{{ end -}}
-    {{ with .IPv6 }}{{ if .Static -}}
+    {{- end }}{{ end }}
+    {{- with .IPv6 }}{{ if .Static }}
     Address={{ .Address }}
     Gateway={{ .Gateway }}
-    {{ end }}{{ end -}}
-    {{ if or (not .IPv6) .IPv6.SolicitDHCP -}}
+    {{- end }}{{ end }}
+    {{- if not .IPv6 }}
     IPv6AcceptRA=no
-    {{ end -}}
-    {{ range .DNS -}}
+    {{- end }}
+    {{- with .IPv4 }}{{ range .DNS }}
     DNS={{ . }}
-    {{ end -}}
+    {{- end }}{{ end }}
+    {{- with .IPv4 }}{{- range .DNS }}
+    DNS={{ . }}
+    {{- end }}{{ end }}
+    {{- with .IPv4 }}
 
-    {{ with .IPv4 }}
     [DHCPv4]
     ClientIdentifier=mac
     UseHostname=no
-    RequestOptions=67
     VendorClassIdentifier=HTTPClient:Arch:00016
-    {{ end -}}
+    {{- end }}
+    {{- with .IPv6 }}
 
-    {{ with .IPv6 }}
     [DHCPv6]
     ClientIdentifier=mac
     UseHostname=no
-    RequestOptions=67
     VendorClassIdentifier=HTTPClient:Arch:00016
-    WithoutRA={{ if .SolicitDHCP }}solicit{{ else }}no{{ end }}
-    {{ end -}}
-{{ end -}}
+    WithoutRA={{ if .Stateful }}solicit{{ else }}no{{ end }}
+    {{- end }}
+{{- if not $URI }}
+{{- if .IPv4 }}
+- path: /etc/dhcpcd.conf
+  type: file
+  data: |
+    allowinterfaces {{ if .VLAN }}bootvlan{{ else }}bootif{{ end }}
+    #inform
+    ipv4only
+    noipv4ll
+    noipv6
+    noipv6rs
+    option 67
+    #nooption 1, 3, 28, 33, 51
+    vendorclassid HTTPClient:Arch:00016
+    script /usr/local/bin/dhcpcd-inform4
+- path: /etc/systemd/system/runner-pre.target.wants/dhcpcd-noconfigure-oneshot.service
+  type: symlink
+  data: /usr/lib/systemd/system/dhcpcd-noconfigure-oneshot.service
+{{- end }}
+{{- end }}
+{{- end }}

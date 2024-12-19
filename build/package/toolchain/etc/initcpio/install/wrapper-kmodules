@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+build() {
+    add_checked_modules '/drivers/net/'
+
+    map add_module \
+        'dm-mod' \
+        'dm-snapshot?' \
+        'dm-mirror?' \
+        'dm-cache?' \
+        'dm-cache-smq?' \
+        'dm-writecache?' \
+        'dm-thin-pool?' \
+        'dm-raid?' \
+        'raid0?' \
+        'raid1?' \
+        'raid10?' \
+        'raid456?' \
+        'dm-integrity?' \
+        'dm-vdo?'
+}
+
+help() {
+    cat <<HELPEOF
+This hook provides kernel modules.
+HELPEOF
+}

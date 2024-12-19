@@ -6,19 +6,22 @@ import (
 	"fmt"
 	"net"
 	"slices"
+	"strings"
 )
 
 type IPv4 struct {
 	Static  bool
 	Address string
 	Gateway string
+	DNS     []string
 }
 
 type IPv6 struct {
-	Static      bool
-	SolicitDHCP bool
-	Address     string
-	Gateway     string
+	Static   bool
+	Stateful bool
+	Address  string
+	Gateway  string
+	DNS      []string
 }
 
 type Config struct {
@@ -26,7 +29,6 @@ type Config struct {
 	VLAN          *int
 	IPv4          *IPv4
 	IPv6          *IPv6
-	DNS           []string
 	URI           *string
 	PartitionUUID *string
 	FilePath      *string
@@ -89,19 +91,19 @@ func Load(efivars string) (*Config, error) {
 				static = true
 			}
 
-			dhcp := false
-			if ipv6.IPAddressOrigin == efidevicepath.IPv6StatefullAutoOrigin {
-				dhcp = true
+			stateful := false
+			if ipv6.IPAddressOrigin == efidevicepath.IPv6StatefulAutoOrigin {
+				stateful = true
 			}
 
 			addr := ipv6.LocalIPAddress.String()
 			prefix := ipv6.PrefixLength
 
 			cfg.IPv6 = &IPv6{
-				Static:      static,
-				SolicitDHCP: dhcp,
-				Address:     fmt.Sprintf("%s/%d", addr, prefix),
-				Gateway:     ipv6.GatewayIPAddress.String(),
+				Static:   static,
+				Stateful: stateful,
+				Address:  fmt.Sprintf("%s/%d", addr, prefix),
+				Gateway:  ipv6.GatewayIPAddress.String(),
 			}
 
 		case efidevicepath.DNSType:
@@ -110,8 +112,16 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse DNS from current load option: %w", err)
 			}
 
-			for _, addr := range dns.Instances {
-				cfg.DNS = append(cfg.DNS, addr.String())
+			if dns.IsIPv6 {
+				for _, addr := range dns.Instances {
+					cfg.IPv6.DNS = append(cfg.IPv6.DNS, addr.String())
+				}
+
+			} else {
+				for _, addr := range dns.Instances {
+					cfg.IPv4.DNS = append(cfg.IPv4.DNS, addr.String())
+				}
+
 			}
 
 		case efidevicepath.URIType:
@@ -179,7 +189,10 @@ func Load(efivars string) (*Config, error) {
 				return nil, fmt.Errorf("parse FilePath from current load option: %w", err)
 			}
 
-			cfg.FilePath = &[]string{file.PathName}[0]
+			s := file.PathName
+			s = strings.Replace(s, `\`, `/`, -1)
+
+			cfg.FilePath = &s
 		}
 	}
 

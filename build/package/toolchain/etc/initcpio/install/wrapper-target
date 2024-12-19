@@ -2,6 +2,7 @@
 
 build() {
     command cp --recursive /target/* "${BUILDROOT}"
+    command mkdir --parents "${BUILDROOT}/efivars"
 }
 
 help() {

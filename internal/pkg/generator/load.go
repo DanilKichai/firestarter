@@ -3,22 +3,24 @@ package generator
 import (
 	"bytes"
 	"firestarter/internal/pkg/batch"
+	"firestarter/internal/pkg/generator/helpers"
 	"fmt"
 	"html/template"
-	"os"
+	"path"
 
 	"gopkg.in/yaml.v2"
 )
 
-func Load(file string, context interface{}) (*batch.Batch, error) {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return nil, fmt.Errorf("read file: %w", err)
+func Load(file string, context interface{}, show bool) (*batch.Batch, error) {
+
+	funcMap := template.FuncMap{
+		"path2uri": helpers.Path2URI,
 	}
 
-	tmpl, err := template.New("bootstrap").Parse(string(data))
+	name := path.Base(file)
+	tmpl, err := template.New(name).Funcs(funcMap).ParseFiles(file)
 	if err != nil {
-		return nil, fmt.Errorf("parse template: %w", err)
+		return nil, fmt.Errorf("construct template: %w", err)
 	}
 
 	var buf bytes.Buffer
@@ -26,6 +28,10 @@ func Load(file string, context interface{}) (*batch.Batch, error) {
 	err = tmpl.Execute(&buf, context)
 	if err != nil {
 		return nil, fmt.Errorf("execute template: %w", err)
+	}
+
+	if show {
+		fmt.Print(buf.String())
 	}
 
 	var u batch.Batch
