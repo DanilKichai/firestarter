@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+URI_FIFO="$1"
+URI_FILE="$2"
+WAIT_TIMEOUT="$3"
+
+if [[ -z "$2" ]]; then
+    echo "Usage: $0 URI_FIFO URI_FILE WAIT_TIMEOUT"
+    exit 1
+fi
+
+timeout "$WAIT_TIMEOUT" awk '{
+    print "URI=\"" $0 "\"";
+}' <"${URI_FIFO}" >"${URI_FILE}"

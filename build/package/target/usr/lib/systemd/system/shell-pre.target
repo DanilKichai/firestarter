@@ -1,0 +1,6 @@
+
+[Unit]
+Description=Preparation for Shell
+Requires=basic.target
+After=basic.target
+AllowIsolate=yes

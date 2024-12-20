@@ -1,0 +1,11 @@
+[Unit]
+Description=DHCP inspector
+After=systemd-udevd.service
+Before=systemd-networkd.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+Restart=no
+EnvironmentFile=/etc/default/inspector
+ExecStart=/usr/local/bin/inspector "${NETWORK_INTERFACE}" "${URI_FIFO}"

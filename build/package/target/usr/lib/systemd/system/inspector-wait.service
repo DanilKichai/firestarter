@@ -1,0 +1,9 @@
+[Unit]
+Description=DHCP inspector wait
+After=inspector.service
+
+[Service]
+Type=oneshot
+Restart=no
+EnvironmentFile=/etc/default/inspector
+ExecStart=/usr/local/bin/inspector-wait "${URI_FIFO}" "${URI_FILE}" "${WAIT_TIMEOUT}"

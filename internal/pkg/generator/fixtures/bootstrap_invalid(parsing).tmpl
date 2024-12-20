@@ -1,0 +1,12 @@
+---
+
+- path: "/run/systemd/network/eth0.network"
+  type: "file"
+  data: |
+    [Match]
+    Name=eth0
+
+    [Network]
+    Address={{ .IPv4.Address }}
+    Gateway={{ .IPv4.Gateway }}
+    Range={{ range nil }}

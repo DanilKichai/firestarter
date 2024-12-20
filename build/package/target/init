@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+if ! mount -t efivarfs efivars /efivars; then
+  echo "Mount efivarfs failed!"
+  sleep infinity
+fi
+
+if ! bootstrap \
+  --efivars /efivars
+then
+  echo "Bootstrap failed!"
+  sleep infinity
+fi
+
+exec \
+  /usr/lib/systemd/systemd \
+    --unit=shell.service \
+    --machine-id=$(uuidgen | tr -d "-")

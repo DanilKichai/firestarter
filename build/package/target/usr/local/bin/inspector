@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+
+NETWORK_INTERFACE="$1"
+URI_FIFO="$2"
+
+if [[ -z "$2" ]]; then
+    echo "Usage: $0 NETWORK_INTERFACE URI_FIFO"
+    exit 1
+fi
+
+get_param () {
+    EXP="$1"
+    IDX="$2"
+
+    PARAM=
+
+    I="-1"
+    for LINE in "${@:3}"; do
+        ((I++))
+
+        [[ "$IDX" != "-1" ]] && [[ "$IDX" != "$I" ]] && continue
+
+        PARAM="$(echo "$LINE" | sed --silent --regexp-extended "$EXP" )"
+
+        [[ -n "$PARAM" ]] && break
+    done
+
+    echo "$PARAM" 
+}
+
+write_hook () {
+    ECHO="$(
+        echo \
+            "$1" \
+            2>&1 \
+            1>"${URI_FIFO}"
+
+        [[ "$?" = "0" ]] && echo "exit_code=0"
+    )"
+    echo "echo: write URI to FIFO \"${URI_FIFO}\": $ECHO"
+}
+
+inspect_packet () {
+
+    ### IPv4 DHCPv4 inspection
+
+    # Get IPv4 paraeters
+
+    IP4_SRC_PORT="$(get_param 's/^[0-9]+.[0-9]+.[0-9]+.[0-9]+\.([0-9]+) > [0-9]+.[0-9]+.[0-9]+.[0-9]+\.[0-9]+: .*$/\1/p' 1 "$@")"
+    IP4_DST_PORT="$(get_param 's/^[0-9]+.[0-9]+.[0-9]+.[0-9]+\.[0-9]+ > [0-9]+.[0-9]+.[0-9]+.[0-9]+\.([0-9]+): .*$/\1/p' 1 "$@")"
+    IP4_UDP_PROTO="$(get_param 's/^[0-9]+.[0-9]+.[0-9]+.[0-9]+\.[0-9]+ > [0-9]+.[0-9]+.[0-9]+.[0-9]+\.[0-9]+: \[udp sum ok\] ([^,]+).*$/\1/p' 1 "$@")"
+    DHCP4_XID="$(get_param 's/^.*, xid ([^,]+).*$/\1/p' 1 "$@")"
+    DHCP4_MSG="$(get_param 's/^DHCP-Message \(53\), length [0-9]+: (.+)$/\1/p' -1 "$@")"
+    DHCP4_URI="$(get_param 's/^BF \(67\), length [0-9]+: \"(.+)\"$/\1/p' -1 "$@")"
+    BOOTP_FILE="$(get_param 's/^file \"(.+)\"$/\1/p' -1 "$@")"
+
+    # BOOTP/DHCPv4 DHCPREQUEST/DHCPINFORM
+
+    if \
+        [[ "$IP4_SRC_PORT" = "68" ]] && \
+        [[ "$IP4_DST_PORT" = "67" ]] && \
+        [[ "$IP4_UDP_PROTO" = "BOOTP/DHCP" ]] && \
+        ( [[ "$DHCP4_MSG" = "Request" ]] || [[ "$DHCP4_MSG" = "Inform" ]] )
+    then
+        echo "inspector: DHCPv4 Request, XID: $DHCP4_XID"
+
+        TRANSACTION_DHCP4_XID="$DHCP4_XID"
+    fi
+
+    # DHCPv4 ACK
+
+    if \
+        [[ "$IP4_SRC_PORT" = "67" ]] && \
+        [[ "$IP4_DST_PORT" = "68" ]] && \
+        [[ "$IP4_UDP_PROTO" = "BOOTP/DHCP" ]] && \
+        [[ "$DHCP4_MSG" = "ACK" ]]
+    then
+        if [[ -n "$BOOTP_FILE" ]]; then
+            URI="$BOOTP_FILE"
+        elif [[ -n "$DHCP4_URI" ]]; then
+            URI="$DHCP4_URI"                
+        fi
+
+        echo "inspector: DHCPv4 ACK, XID: $DHCP4_XID,  transaction XID: $TRANSACTION_DHCP4_XID, URI: $URI"
+
+        if \
+            [[ "$DHCP4_XID" = "$TRANSACTION_DHCP4_XID" ]] && \
+            [[ -n "$URI" ]]
+        then
+            write_hook "$URI"
+        fi
+    fi
+
+    ### IPv6 DHCPv6 inspection
+
+    # Get IPv6 paraeters
+
+    IP6_SRC_PORT="$(get_param 's/.* [0-9a-f:]+\.([0-9]+) > [0-9a-f:]+\.[0-9]+.*$/\1/p' 0 "$@")"
+    IP6_DST_PORT="$(get_param 's/.* [0-9a-f:]+\.[0-9]+ > [0-9a-f:]+\.([0-9]+).*$/\1/p' 0 "$@")"
+    IP6_UDP_PROTO="$(get_param 's/^.* \[udp sum ok\] ([^ ]+).*$/\1/p' 0 "$@")"
+    DHCP6_XID="$(get_param 's/^.*\(xid=([^ ]+).*$/\1/p' 0 "$@")"
+    DHCP6_MSG="$(get_param 's/^.* \[udp sum ok\] [^ ]+ ([^ ]+).*$/\1/p' 0 "$@")"
+    DHCP6_URI="$(get_param 's/^.* \(Bootfile-URL ([^ ]+)(\) .*|\)\))$/\1/p' 0 "$@")"
+
+    # DHCPv6 Request/Information-Request
+
+    if \
+        [[ "$IP6_SRC_PORT" = "546" ]] && \
+        [[ "$IP6_DST_PORT" = "547" ]] && \
+        [[ "$IP6_UDP_PROTO" = "dhcp6" ]] && \
+        ( [[ "$DHCP6_MSG" = "request" ]] || [[ "$DHCP6_MSG" = "inf-req" ]] )
+    then
+        echo "inspector: DHCPv6 request, XID: $DHCP6_XID"
+        TRANSACTION_DHCP6_XID="$DHCP6_XID"
+    fi
+
+    # DHCPv6 Reply
+
+    if \
+        [[ "$IP6_SRC_PORT" = "547" ]] && \
+        [[ "$IP6_DST_PORT" = "546" ]] && \
+        [[ "$IP6_UDP_PROTO" = "dhcp6" ]] && \
+        [[ "$DHCP6_MSG" = "reply" ]]
+    then
+        echo "inspector: DHCPv6 reply, XID: $DHCP6_XID, transaction XID: $TRANSACTION_DHCP6_XID, URI: $DHCP6_URI"
+
+        if \
+            [[ "$DHCP6_XID" = "$TRANSACTION_DHCP6_XID" ]] && \
+            [[ -n "$DHCP6_URI" ]]
+        then
+            write_hook "$DHCP6_URI"
+        fi
+    fi
+}
+
+PACKET=()
+TRANSACTION_DHCP4_XID=
+TRANSACTION_DHCP6_XID=
+
+IP="$(
+    ip \
+        link set dev "$NETWORK_INTERFACE" up \
+        2>&1 \
+        1>/dev/null
+
+    [[ "$?" = "0" ]] && echo "exit_code=0"
+)"
+echo "ip: link up \"$NETWORK_INTERFACE\" interface: $IP"
+
+MKFIFO="$(
+    mkfifo \
+        $URI_FIFO \
+        2>&1 \
+        1>/dev/null
+
+    [[ "$?" = "0" ]] && echo "exit_code=0"
+)"
+echo "mkfifo: create FIFO \"$URI_FIFO\": $FIFO"
+
+(
+    tcpdump -vvvxlni "$NETWORK_INTERFACE" \
+        '(outbound and udp and src port 68 and dst port 67) or
+        (inbound and udp and src port 67 and dst port 68) or
+        (outbound and udp and src port 546 and dst port 547) or
+        (inbound and udp and src port 547 and dst port 546)' |\
+    while read LINE; do
+        if [[ "${LINE:0:2}" == "0x" ]]; then
+            if [[ ${#PACKET[@]} -gt 0 ]]; then
+                inspect_packet "${PACKET[@]}"
+                PACKET=()
+            fi
+
+            continue
+        else
+            PACKET+=("$LINE")
+        fi
+    done
+
+    [[ "$?" != "0" ]] && exit 1
+) 2>&1 1>&2 |\
+while read LINE; do
+    echo "$LINE"
+
+    if [[ "${LINE:0:18}" = "tcpdump: listening" ]]; then
+        SD_NOTIFY="$(
+            systemd-notify \
+              --ready \
+              --status="Inspecting DHCP..." \
+              2>&1 \
+              1>/dev/null
+
+            [[ "$?" = "0" ]] && echo "exit_code=0"
+        )"
+        echo "systemd-notify: $SD_NOTIFY"
+    fi
+done
