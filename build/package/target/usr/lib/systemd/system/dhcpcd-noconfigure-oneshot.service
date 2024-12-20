@@ -1,0 +1,9 @@
+[Unit]
+Description=DHCP fake client
+After=network-online.target
+
+[Service]
+Type=oneshot
+Restart=no
+ExecStart=/usr/bin/dhcpcd --noconfigure --oneshot --nobackground
+TimeoutStartSec=30s
